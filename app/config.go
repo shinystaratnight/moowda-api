@@ -79,11 +79,13 @@ func LoadConfig(configPaths ...string) error {
 	for _, path := range configPaths {
 		v.AddConfigPath(path)
 	}
+
 	if err := v.ReadInConfig(); err != nil {
-		return fmt.Errorf("Failed to read the configuration file: %s", err)
+		return fmt.Errorf("failed to read the configuration file: %s", err)
 	}
 	if err := v.Unmarshal(&Config); err != nil {
-		return err
+		return fmt.Errorf("failed to read the configuration file: %s", err)
 	}
+
 	return Config.Validate()
 }
