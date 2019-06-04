@@ -10,20 +10,22 @@ import (
 )
 
 func AddRoutes(e *echo.Echo, db *gorm.DB) {
+	r := e.Group("/api")
+
 	userAPI := apis.NewUserAPI(db)
 	topicAPI := apis.NewTopicAPI(db)
 
 	// Without Auth
-	e.POST("/register", userAPI.Register)
-	e.POST("/login", userAPI.Login)
+	r.POST("/register", userAPI.Register)
+	r.POST("/login", userAPI.Login)
 
-	e.GET("/topics", topicAPI.GetTopics)
-	e.GET("/topics/:id", topicAPI.GetTopic)
+	r.GET("/topics", topicAPI.GetTopics)
+	r.GET("/topics/:id", topicAPI.GetTopic)
 
 	// With Auth
-	r := e.Group("/")
-	r.Use(middleware.JWT([]byte(app.Config.JWTSigningKey)))
+	auth := e.Group("/api")
+	auth.Use(middleware.JWT([]byte(app.Config.JWTSigningKey)))
 
-	r.POST("/topics", topicAPI.CreateTopic)
+	auth.POST("/topics", topicAPI.CreateTopic)
 
 }

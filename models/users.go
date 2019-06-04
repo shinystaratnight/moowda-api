@@ -3,13 +3,13 @@ package models
 type User struct {
 	BaseModel
 
-	Name        string `gorm:"name"`
-	Username    string `gorm:"login"`
-	Email       string `gorm:"email"`
-	Password    string `gorm:"password" json:"-"`
-	IsSuperuser bool   `gorm:"is_superuser"`
-	IsStaff     bool   `gorm:"is_staff"`
-	IsActive    bool   `gorm:"is_active"`
+	Name        string `gorm:"column:name"`
+	Username    string `gorm:"column:login"`
+	Email       string `gorm:"column:email"`
+	Password    string `gorm:"column:password" json:"-"`
+	IsSuperuser bool   `gorm:"column:is_superuser"`
+	IsStaff     bool   `gorm:"column:is_staff"`
+	IsActive    bool   `gorm:"column:is_active"`
 }
 
 func (User) TableName() string {
