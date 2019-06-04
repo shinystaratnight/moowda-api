@@ -18,6 +18,7 @@ func AddRoutes(e *echo.Echo, db *gorm.DB) {
 	e.POST("/login", userAPI.Login)
 
 	e.GET("/topics", topicAPI.GetTopics)
+	e.GET("/topics/:id", topicAPI.GetTopic)
 
 	// With Auth
 	r := e.Group("/")

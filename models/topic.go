@@ -1,7 +1,9 @@
 package models
 
+import "time"
+
 type BaseModel struct {
-	ID        uint      `gorm:"primary_key" json:"id"`
+	ID uint `gorm:"primary_key" json:"id"`
 	//CreatedAt time.Time `json:"-"`
 	//UpdatedAt time.Time `json:"-"`
 	//DeletedAt *time.Time `sql:"index" json:"-"`
@@ -28,6 +30,18 @@ type TopicCard struct {
 }
 
 func (TopicCard) TableName() string {
+	return "topics_topic"
+}
+
+type TopicDetail struct {
+	BaseModel
+
+	Title           string    `gorm:"title" json:"title"`
+	MessagesCount   uint      `gorm:"-" json:"messages_count"`
+	LastMessageDate time.Time `gorm:"-" json:"last_message_date"`
+}
+
+func (TopicDetail) TableName() string {
 	return "topics_topic"
 }
 

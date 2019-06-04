@@ -7,6 +7,6 @@ WORKDIR /root/
 ADD api .
 COPY config/development.yaml ./config/
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["./api"]

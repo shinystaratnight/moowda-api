@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo"
 	"moowda/models"
 	"net/http"
+	"strconv"
 )
 
 type TopicAPI struct {
@@ -43,4 +44,21 @@ func (s *TopicAPI) GetTopics(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, topics)
+}
+
+func (s *TopicAPI) GetTopic(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	var topic models.TopicDetail
+
+	if err := s.db.Where("id = ?", id).
+		Select("id, title, (?) as messages_count, (?) as last_message_date",
+			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = ?", id).QueryExpr(),
+			s.db.Table("topics_topicmessage").Select("created_at").Where("topics_topicmessage.topic_id = ?", id).Order("id DESC").Limit(1).QueryExpr(),
+		).
+		Find(&topic).Error; err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, topic)
 }
