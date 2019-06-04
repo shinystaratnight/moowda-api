@@ -3,6 +3,7 @@ module moowda
 go 1.12
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 	github.com/gorilla/websocket v1.4.0
 	github.com/jinzhu/gorm v1.9.8
