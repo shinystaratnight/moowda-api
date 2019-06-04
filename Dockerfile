@@ -4,8 +4,7 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-ADD app .
-ADD src/moowda/public/index.html public/index.html
+ADD api .
 
 EXPOSE 8000
 
