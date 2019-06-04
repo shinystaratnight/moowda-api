@@ -1,0 +1,45 @@
+services:
+  - docker:dind
+
+variables:
+  GIT_DEPTH: "3"
+
+stages:
+  - build
+  - build_image
+  - deploy
+
+build:
+  stage: build
+  image: golang
+  script:
+    - export GOPATH=$(pwd)
+    - CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o api
+  artifacts:
+    paths:
+      - app
+
+build_image:
+  stage: build_image
+  image: docker:latest
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker push $CI_REGISTRY_IMAGE
+  only:
+    - master
+
+
+deploy-dev:
+  stage: deploy
+  image: junte/ssh-agent
+  dependencies: []
+  variables:
+    SSH_PRIVATE_KEY: $SSH_DEV_PRIVATE_KEY
+  script:
+    - ssh deploy@${DEV_HOST} "/opt/deploy/deploy.sh"
+  environment:
+    name: dev
+    url: https://${DEV_HOST}/admin/
+  only:
+    - master

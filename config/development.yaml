@@ -1,0 +1,23 @@
+# Host
+server_port: 8080
+
+# The Data Source Name for the database
+# Make sure you override this in production with the environment variable: RESTFUL_DSN
+dsn: "postgres://postgres:postgres@localhost:5432/moowda?sslmode=disable"
+dsn_test: "postgres://docker:docker@127.0.0.1:5432/hyper_test?sslmode=disable"
+
+# These are secret keys used for JWT signing and verification.
+# Make sure you override these keys in production by the following environment variables:
+#   RESTFUL_JWT_VERIFICATION_KEY
+#   RESTFUL_JWT_SIGNING_KEY
+jwt_verification_key: "-"
+jwt_signing_key: "-"
+# Uncomment the following line and set an appropriate JWT signing method, if needed
+# The default signing method is HS256.
+#jwt_signing_method: "HS256"
+
+
+# Make sure to override all of these email keys in production with the environment variables:
+# RESTFUL_SENDGRID_API_KEY
+sendgrid_api_key: "-"
+default_email_address: "tech@junte.it"
