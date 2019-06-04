@@ -28,4 +28,7 @@ func AddRoutes(e *echo.Echo, db *gorm.DB) {
 
 	auth.POST("/topics", topicAPI.CreateTopic)
 
+	auth.GET("/topics/:id/messages", topicAPI.GetTopicMessages)
+	auth.POST("/topics/:id/messages", topicAPI.CreateTopicMessage)
+
 }

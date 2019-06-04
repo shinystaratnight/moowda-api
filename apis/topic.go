@@ -62,3 +62,41 @@ func (s *TopicAPI) GetTopic(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, topic)
 }
+
+func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
+	topicID, _ := strconv.Atoi(c.Param("id"))
+
+	message := new(models.TopicMessage)
+	if err := c.Bind(message); err != nil {
+		return err
+	}
+
+	var user models.User
+	if err := s.db.First(&user).Error; err != nil {
+		return err
+	}
+
+	message.TopicID = uint(topicID)
+	message.UserID = user.ID
+
+	if err := s.db.Create(message).Error; err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, message)
+}
+
+func (s *TopicAPI) GetTopicMessages(c echo.Context) error {
+	topicID, _ := strconv.Atoi(c.Param("id"))
+
+	var messages []models.TopicMessage
+
+	if err := s.db.Where("topic_id = ?", topicID).Find(&messages).Error; err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"count":   len(messages),
+		"results": messages,
+	})
+}
