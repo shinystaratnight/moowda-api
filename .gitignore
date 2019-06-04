@@ -20,3 +20,5 @@ debug
 
 src/**/vendor/.git
 src/**/vendor/.gitignore
+.idea
+api
