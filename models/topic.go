@@ -78,24 +78,22 @@ func (TopicMessageRead) TableName() string {
 }
 
 type TopicMessageImage struct {
-	BaseModel
-
-	ImageID        uint         `gorm:"column:image_id"`
-	Image          Image        `gorm:"foreignkey:ImageID"`
-	TopicMessageID uint         `gorm:"column:topic_messages_id"`
-	TopicMessage   TopicMessage `gorm:"foreignkey:TopicMessageID"`
+	ImageID        uint         `gorm:"column:image_id" json:"-"`
+	Image          Image        `gorm:"foreignkey:ImageID" json:"image"`
+	TopicMessageID uint         `gorm:"column:topicmessage_id" json:"-"`
+	TopicMessage   TopicMessage `gorm:"foreignkey:TopicMessageID" json:"-"`
 }
 
 func (TopicMessageImage) TableName() string {
-	return "topics_topicread"
+	return "topics_topicmessage_images"
 }
 
 type Image struct {
 	BaseModel
 
-	UserID uint   `gorm:"user_id" json:"-"`
+	UserID uint   `gorm:"column:user_id" json:"-"`
 	User   User   `gorm:"foreignkey:UserID"  json:"-"`
-	URL    string `gorm:"url"  json:"url"`
+	URL    string `gorm:"column:url" json:"url"`
 }
 
 func (Image) TableName() string {
