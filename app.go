@@ -20,7 +20,11 @@ func run() {
 	flag.Parse()
 
 	e := echo.New()
-	e.Use(middleware.CORS())
+
+	corsConfig := middleware.DefaultCORSConfig
+	corsConfig.AllowCredentials = true
+	e.Use(middleware.CORSWithConfig(corsConfig))
+
 	e.Logger.SetLevel(log.DEBUG)
 
 	e.Use(middleware.Logger())
