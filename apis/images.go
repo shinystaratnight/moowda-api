@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
+	"moowda/models"
 	"moowda/storage"
 	"net/http"
 )
@@ -18,6 +19,8 @@ func NewImagesAPI(db *gorm.DB, storage storage.FileStorage) *ImagesAPI {
 }
 
 func (r *ImagesAPI) Upload(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+
 	sourceFile, err := c.FormFile("file")
 	if err != nil {
 		return errors.Wrap(err, "get form file")
@@ -33,7 +36,14 @@ func (r *ImagesAPI) Upload(c echo.Context) error {
 		return errors.Wrap(err, "store file")
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"url": url,
-	})
+	image := models.Image{
+		User: *user,
+		URL:  url,
+	}
+
+	if err := r.db.Create(&image).Error; err != nil {
+		return errors.Wrap(err, "create image")
+	}
+
+	return c.JSON(http.StatusOK, image)
 }

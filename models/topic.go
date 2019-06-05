@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type BaseModel struct {
 	ID        uint      `gorm:"primary_key" json:"id"`
@@ -91,6 +93,11 @@ func (TopicMessageImage) TableName() string {
 type Image struct {
 	BaseModel
 
-	UserID uint `gorm:"user_id"`
-	User   User `gorm:"foreignkey:UserID"`
+	UserID uint   `gorm:"user_id" json:"-"`
+	User   User   `gorm:"foreignkey:UserID"  json:"-"`
+	URL    string `gorm:"url"  json:"url"`
+}
+
+func (Image) TableName() string {
+	return "topics_image"
 }

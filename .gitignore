@@ -22,3 +22,4 @@ src/**/vendor/.git
 src/**/vendor/.gitignore
 .idea
 api
+static/*
