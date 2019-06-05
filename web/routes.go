@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
@@ -8,6 +9,7 @@ import (
 	"moowda/apis"
 	"moowda/app"
 	"moowda/models"
+	"moowda/storage"
 )
 
 func AddRoutes(e *echo.Echo, db *gorm.DB) {
@@ -15,6 +17,12 @@ func AddRoutes(e *echo.Echo, db *gorm.DB) {
 
 	userAPI := apis.NewUserAPI(db)
 	topicAPI := apis.NewTopicAPI(db)
+
+	fileStorage, err := storage.Adapters[app.Config.StorageAdapter](app.Config.StorageConfig)
+	if err != nil {
+		panic(fmt.Errorf("file storage wasnt able to start due to the error: %v", err))
+	}
+	imagesAPI := apis.NewImagesAPI(db, fileStorage)
 
 	// Without Auth
 	r.POST("/register", userAPI.Register)
@@ -25,6 +33,8 @@ func AddRoutes(e *echo.Echo, db *gorm.DB) {
 
 	r.POST("/restore-request", userAPI.RestoreRequest)
 	r.POST("/restore", userAPI.Restore)
+
+	r.POST("/images", imagesAPI.Upload)
 
 	// With Auth
 	auth := e.Group("/api")
