@@ -32,6 +32,11 @@ type RegisterForm struct {
 	Password string `json:"password"`
 }
 
+func (s *UserAPI) Me(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+	return c.JSON(http.StatusOK, user)
+}
+
 func (s *UserAPI) Register(c echo.Context) error {
 	registerForm := new(RegisterForm)
 	if err := c.Bind(registerForm); err != nil {

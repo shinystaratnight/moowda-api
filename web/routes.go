@@ -34,6 +34,8 @@ func AddRoutes(e *echo.Echo, db *gorm.DB) {
 	r.POST("/restore-request", userAPI.RestoreRequest)
 	r.POST("/restore", userAPI.Restore)
 
+	r.GET("/topics/:id/messages", topicAPI.GetTopicMessages)
+
 	// With Auth
 	auth := e.Group("/api")
 
@@ -54,12 +56,10 @@ func AddRoutes(e *echo.Echo, db *gorm.DB) {
 	}
 	auth.Use(middleware.JWTWithConfig(jwtConfig))
 
+	auth.GET("/me", userAPI.Me)
 	auth.POST("/topics", topicAPI.CreateTopic)
-
-	auth.GET("/topics/:id/messages", topicAPI.GetTopicMessages)
 	auth.POST("/topics/:id/messages", topicAPI.CreateTopicMessage)
 	auth.POST("/topics/:topicID/messages/:messageID/read", topicAPI.ReadTopicMessage)
-
 	auth.POST("/images", imagesAPI.Upload)
 
 }
