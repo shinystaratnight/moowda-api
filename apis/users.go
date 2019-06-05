@@ -105,6 +105,7 @@ func (s *UserAPI) Login(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{
+		"type":  "Bearer",
 		"token": t,
 	})
 }
