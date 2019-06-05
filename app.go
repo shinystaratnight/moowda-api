@@ -20,6 +20,7 @@ func run() {
 	flag.Parse()
 
 	e := echo.New()
+	e.Use(middleware.CORS())
 	e.Logger.SetLevel(log.DEBUG)
 
 	e.Use(middleware.Logger())
