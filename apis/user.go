@@ -87,7 +87,6 @@ func (s *UserAPI) Login(c echo.Context) error {
 	// Set claims
 	claims := jwt.MapClaims{
 		"userID": user.ID,
-		"email":  user.Email,
 		"exp":    time.Now().Add(time.Hour * 72).Unix(),
 	}
 

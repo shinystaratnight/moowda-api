@@ -20,6 +20,7 @@ func run() {
 	flag.Parse()
 
 	e := echo.New()
+	e.Static("/static", "static")
 
 	corsConfig := middleware.DefaultCORSConfig
 	corsConfig.AllowCredentials = true

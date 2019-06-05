@@ -17,16 +17,12 @@ func NewTopicAPI(db *gorm.DB) *TopicAPI {
 }
 
 func (s *TopicAPI) CreateTopic(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+
 	topic := new(models.Topic)
 	if err := c.Bind(topic); err != nil {
 		return err
 	}
-
-	var user models.User
-	if err := s.db.First(&user).Error; err != nil {
-		return err
-	}
-
 	topic.OwnerID = user.ID
 
 	if err := s.db.Create(topic).Error; err != nil {
@@ -71,10 +67,7 @@ func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
 		return err
 	}
 
-	var user models.User
-	if err := s.db.First(&user).Error; err != nil {
-		return err
-	}
+	user := c.Get("user").(*models.User)
 
 	message.TopicID = uint(topicID)
 	message.UserID = user.ID
@@ -95,10 +88,7 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 		return err
 	}
 
-	var user models.User
-	if err := s.db.First(&user).Error; err != nil {
-		return err
-	}
+	user := c.Get("user").(*models.User)
 
 	readMessage := models.TopicMessageRead{
 		TopicID:        message.TopicID,
