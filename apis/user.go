@@ -84,14 +84,15 @@ func (s *UserAPI) Login(c echo.Context) error {
 		return c.NoContent(http.StatusUnauthorized)
 	}
 
-	// Create token
-	token := jwt.New(jwt.SigningMethodHS256)
-
 	// Set claims
-	claims := token.Claims.(jwt.MapClaims)
-	claims["name"] = user.Name
-	claims["email"] = user.Email
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	claims := jwt.MapClaims{
+		"userID": user.ID,
+		"email":  user.Email,
+		"exp":    time.Now().Add(time.Hour * 72).Unix(),
+	}
+
+	// Create token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString([]byte(app.Config.JWTSigningKey))
@@ -101,6 +102,16 @@ func (s *UserAPI) Login(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"token": t,
+	})
+}
+
+func (s *UserAPI) RestoreRequest(c echo.Context) error {
+	return c.NoContent(http.StatusOK)
+}
+
+func (s *UserAPI) Restore(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]string{
+		"token": "-",
 	})
 }
 

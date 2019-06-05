@@ -60,19 +60,19 @@ func (TopicMessage) TableName() string {
 	return "topics_topicmessage"
 }
 
-type TopicRead struct {
+type TopicMessageRead struct {
 	BaseModel
 
 	TopicID        uint         `gorm:"column:topic_id"`
 	Topic          Topic        `gorm:"foreignkey:TopicID"`
 	UserID         uint         `gorm:"column:user_id"`
 	User           User         `gorm:"foreignkey:UserID"`
-	TopicMessageID uint         `gorm:"column:topic_messages_id"`
+	TopicMessageID uint         `gorm:"column:message_id"`
 	LastMessage    TopicMessage `gorm:"foreignkey:TopicMessageID"`
 }
 
-func (TopicRead) TableName() string {
-	return "topics_topicread"
+func (TopicMessageRead) TableName() string {
+	return "topics_topicmessageread"
 }
 
 type TopicMessageImage struct {
