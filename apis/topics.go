@@ -14,12 +14,13 @@ import (
 )
 
 type TopicAPI struct {
-	db  *gorm.DB
-	hub *sockets.Hub
+	db          *gorm.DB
+	topicsHub   *sockets.Hub
+	messagesHub *sockets.Hub
 }
 
-func NewTopicAPI(db *gorm.DB, hub *sockets.Hub) *TopicAPI {
-	return &TopicAPI{db: db, hub: hub}
+func NewTopicAPI(db *gorm.DB, topicsHub *sockets.Hub, messagesHub *sockets.Hub) *TopicAPI {
+	return &TopicAPI{db: db, topicsHub: topicsHub, messagesHub: messagesHub}
 }
 
 func (s *TopicAPI) CreateTopic(c echo.Context) error {
@@ -45,7 +46,7 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 		return err
 	}
 
-	s.hub.BroadcastTopic(&topicDetail)
+	s.topicsHub.BroadcastTopic(&topicDetail)
 
 	return c.JSON(http.StatusOK, topic)
 }
@@ -114,17 +115,7 @@ func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
 		return err
 	}
 
-	var topicDetail models.TopicDetail
-
-	if err := s.db.Where("id = ?", topicID).
-		Select("id, title, (?) as messages_count, (?) as last_message_date",
-			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = ?", topicID).QueryExpr(),
-			s.db.Table("topics_topicmessage").Select("created_at").Where("topics_topicmessage.topic_id = ?", topicID).Order("id DESC").Limit(1).QueryExpr(),
-		).Find(&topicDetail).Error; err != nil {
-		return err
-	}
-
-	s.hub.BroadcastTopic(&topicDetail)
+	s.messagesHub.BroadcastMessage(&message)
 
 	return c.JSON(http.StatusOK, message)
 }

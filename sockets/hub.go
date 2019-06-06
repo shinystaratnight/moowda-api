@@ -2,6 +2,7 @@ package sockets
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/labstack/echo"
 
 	"moowda/models"
@@ -10,18 +11,22 @@ import (
 // Hub class
 type Hub struct {
 	clients    map[*Client]bool
-	topics     chan *models.TopicDetail
+	topicsCh   chan *models.TopicDetail
+	messagesCh chan *models.TopicMessage
 	register   chan *Client
 	unregister chan *Client
+	topics     map[int][]*Client
 }
 
 // NewHub func
 func newHub() *Hub {
 	return &Hub{
 		clients:    make(map[*Client]bool),
-		topics:     make(chan *models.TopicDetail),
+		topicsCh:   make(chan *models.TopicDetail),
+		messagesCh: make(chan *models.TopicMessage),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
+		topics:     map[int][]*Client{},
 	}
 }
 
@@ -36,7 +41,7 @@ func (h *Hub) Run() {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case topic := <-h.topics:
+		case topic := <-h.topicsCh:
 			messageType := "topic_created"
 			if topic.MessagesCount > 0 {
 				messageType = "‘topic_message_added"
@@ -56,6 +61,36 @@ func (h *Hub) Run() {
 			if err == nil {
 				h.send(data)
 			}
+		case msg := <-h.messagesCh:
+			fmt.Printf("read %v", msg.Content)
+			messageType := "‘message_added’"
+
+			type message struct {
+				Type    string               `json:"type"`
+				Message *models.TopicMessage `json:"message"`
+			}
+
+			resp := &message{
+				Type:    messageType,
+				Message: msg,
+			}
+
+			data, err := json.Marshal(resp)
+			if err == nil {
+				fmt.Printf("send %v", msg.Topic.ID)
+				h.sendToTopic(int(msg.Topic.ID), data)
+			}
+		}
+	}
+}
+
+func (h *Hub) sendToTopic(topicID int, data []byte) {
+	for _, client := range h.topics[topicID] {
+		select {
+		case client.send <- data:
+		default:
+			close(client.send)
+			delete(h.clients, client)
 		}
 	}
 }
@@ -72,11 +107,17 @@ func (h *Hub) send(data []byte) {
 }
 
 func (h *Hub) BroadcastTopic(topic *models.TopicDetail) {
-	h.topics <- topic
+	h.topicsCh <- topic
+}
+
+func (h *Hub) BroadcastMessage(message *models.TopicMessage) {
+	fmt.Printf("111 %v", message.Content)
+	h.messagesCh <- message
+	fmt.Printf("222 %v", message.Content)
 }
 
 // RunHub func
-func RunHub(e *echo.Echo) *Hub {
+func RunTopicsHub(e *echo.Echo) *Hub {
 	hub := newHub()
 	go hub.Run()
 
@@ -84,6 +125,14 @@ func RunHub(e *echo.Echo) *Hub {
 		err = serveWs(hub, c)
 		return
 	})
+
+	return hub
+}
+
+// RunHub func
+func RunMessagesHub(e *echo.Echo) *Hub {
+	hub := newHub()
+	go hub.Run()
 
 	e.GET("/ws/topics/:id/events", func(c echo.Context) (err error) {
 		err = serveWs(hub, c)

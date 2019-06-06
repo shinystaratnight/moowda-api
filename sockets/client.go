@@ -3,6 +3,7 @@ package sockets
 import (
 	"moowda/models"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -45,11 +46,11 @@ type Client struct {
 
 	user *models.User
 
-	// Buffered channel of outbound messages.
+	// Buffered channel of outbound messagesCh.
 	send chan []byte
 }
 
-// writePump pumps messages from the hub to the websocket connection.
+// writePump pumps messagesCh from the hub to the websocket connection.
 //
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
@@ -76,7 +77,7 @@ func (c *Client) writePump() {
 			}
 			w.Write(message)
 
-			// Add queued chat messages to the current websocket message.
+			// Add queued chat messagesCh to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
 				w.Write(newline)
@@ -110,6 +111,11 @@ func serveWs(hub *Hub, c echo.Context) (err error) {
 	}
 
 	hub.register <- client
+
+	id, _ := strconv.Atoi(c.Param("id"))
+	if id > 0 {
+		hub.topics[id] = append(hub.topics[id], client)
+	}
 
 	go client.writePump()
 

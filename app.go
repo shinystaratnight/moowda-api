@@ -104,8 +104,10 @@ func run() {
 	db.LogMode(true)
 	defer db.Close()
 
-	hub := sockets.RunHub(e)
-	web.AddRoutes(e, db, hub)
+	topicsHub := sockets.RunTopicsHub(e)
+	messagesHub := sockets.RunMessagesHub(e)
+
+	web.AddRoutes(e, db, topicsHub, messagesHub)
 
 	e.Logger.Fatal(e.Start(*addr))
 }
