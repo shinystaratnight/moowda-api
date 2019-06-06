@@ -5,17 +5,21 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"golang.org/x/crypto/pbkdf2"
-	"moowda/app"
-	"moowda/models"
+	"net/http"
 	"strings"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/pbkdf2"
 
-	"net/http"
+	"moowda/app"
+	apiErrors "moowda/errors"
+	"moowda/models"
 )
 
 type UserAPI struct {
@@ -26,10 +30,18 @@ func NewUserAPI(db *gorm.DB) *UserAPI {
 	return &UserAPI{db: db}
 }
 
-type RegisterForm struct {
+type RegisterRequest struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+func (f RegisterRequest) Validate() error {
+	return validation.ValidateStruct(&f,
+		validation.Field(&f.Username, validation.Required, validation.Length(1, 24)),
+		validation.Field(&f.Email, validation.Required, is.Email),
+		validation.Field(&f.Password, validation.Required),
+	)
 }
 
 func (s *UserAPI) Me(c echo.Context) error {
@@ -38,22 +50,40 @@ func (s *UserAPI) Me(c echo.Context) error {
 }
 
 func (s *UserAPI) Register(c echo.Context) error {
-	registerForm := new(RegisterForm)
-	if err := c.Bind(registerForm); err != nil {
+	registerRequest := new(RegisterRequest)
+	if err := c.Bind(registerRequest); err != nil {
 		return err
+	}
+
+	if err := registerRequest.Validate(); err != nil {
+		return apiErrors.InvalidData(err.(validation.Errors))
 	}
 
 	salt := RandASCIIBytes(12)
-	hashStr := EncodePassword(registerForm.Password, salt)
+	hashStr := EncodePassword(registerRequest.Password, salt)
 
 	user := &models.User{
-		Username: registerForm.Username,
-		Email:    registerForm.Email,
+		Username: registerRequest.Username,
+		Email:    registerRequest.Email,
 		Password: fmt.Sprintf("%s$%s$%s$%s", "pbkdf2_sha256", "150000", string(salt), hashStr),
 	}
 
+	tx := s.db.Begin()
+
+	if err := s.db.Where("username = ?", user.Username).Find(user).Error; err == nil {
+		return apiErrors.BadRequest(errors.Errorf("username %s already taken", user.Username))
+	}
+
+	if err := s.db.Where("email = ?", user.Email).Find(user).Error; err == nil {
+		return apiErrors.BadRequest(errors.Errorf("email %s already taken", user.Email))
+	}
+
 	if err := s.db.Create(user).Error; err != nil {
-		return err
+		return errors.Wrap(err, "create new user")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return errors.Wrap(err, "commit transaction")
 	}
 
 	// Set claims
@@ -66,45 +96,56 @@ func (s *UserAPI) Register(c echo.Context) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(app.Config.JWTSigningKey))
+	signedToken, err := token.SignedString([]byte(app.Config.JWTSigningKey))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "sign JWT token")
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"type":  "Bearer",
-		"token": t,
+		"token": signedToken,
 	})
 }
 
-type LoginForm struct {
+type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+func (f LoginRequest) Validate() error {
+	return validation.ValidateStruct(&f,
+		validation.Field(&f.Username, validation.Required, validation.Length(1, 24)),
+		validation.Field(&f.Password, validation.Required),
+	)
+}
+
 func (s *UserAPI) Login(c echo.Context) error {
-	form := new(LoginForm)
-	if err := c.Bind(form); err != nil {
+	loginRequest := new(LoginRequest)
+	if err := c.Bind(loginRequest); err != nil {
 		return err
 	}
 
+	if err := loginRequest.Validate(); err != nil {
+		return apiErrors.InvalidData(err.(validation.Errors))
+	}
+
 	var user models.User
-	if err := s.db.Where("login = ?", form.Username).Find(&user).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.NoContent(http.StatusUnauthorized)
+	if err := s.db.Where("login = ?", loginRequest.Username).Find(&user).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return apiErrors.Unauthorized("wrong username or password")
 		}
-		return c.NoContent(http.StatusInternalServerError)
+		return err
 	}
 
 	hashParts := strings.Split(user.Password, "$")
 	if len(hashParts) != 4 {
-		return c.NoContent(http.StatusInternalServerError)
+		return apiErrors.Unauthorized("wrong username or password")
 	}
 
-	encodedPassword := EncodePassword(form.Password, []byte(hashParts[2]))
+	encodedPassword := EncodePassword(loginRequest.Password, []byte(hashParts[2]))
 
 	if encodedPassword != hashParts[3] {
-		return c.NoContent(http.StatusUnauthorized)
+		return apiErrors.Unauthorized("wrong username or password")
 	}
 
 	// Set claims

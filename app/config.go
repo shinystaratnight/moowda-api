@@ -11,6 +11,8 @@ import (
 var Config appConfig
 
 type appConfig struct {
+	// the path to the error message file. Defaults to "config/errors.yaml"
+	ErrorFile string `mapstructure:"error_file"`
 	// the server port. Defaults to 8080
 	ServerPort int `mapstructure:"server_port"`
 	// the data source name (DSN) for connecting to the database. required.
@@ -68,6 +70,8 @@ func LoadConfig(configPaths ...string) error {
 	v.SetConfigType("yaml")
 	v.SetEnvPrefix("restful")
 	v.AutomaticEnv()
+
+	v.SetDefault("error_file", "config/errors.yaml")
 	v.SetDefault("server_port", 8080)
 	v.SetDefault("jwt_signing_method", "HS256")
 	v.SetDefault("email_port", 587)

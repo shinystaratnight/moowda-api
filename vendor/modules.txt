@@ -44,6 +44,13 @@ github.com/dgrijalva/jwt-go
 github.com/fsnotify/fsnotify
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
+# github.com/go-playground/locales v0.12.1
+github.com/go-playground/locales
+github.com/go-playground/locales/currency
+# github.com/go-playground/universal-translator v0.16.0
+github.com/go-playground/universal-translator
+# github.com/go-playground/validator v9.29.0+incompatible
+github.com/go-playground/validator
 # github.com/hashicorp/hcl v1.0.0
 github.com/hashicorp/hcl
 github.com/hashicorp/hcl/hcl/printer
@@ -70,6 +77,8 @@ github.com/labstack/gommon/log
 github.com/labstack/gommon/color
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/random
+# github.com/leodido/go-urn v1.1.0
+github.com/leodido/go-urn
 # github.com/lib/pq v1.1.1
 github.com/lib/pq
 github.com/lib/pq/hstore

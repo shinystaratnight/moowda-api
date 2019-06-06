@@ -1,25 +1,75 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-playground/validator"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
 	_ "github.com/lib/pq"
-	"moowda/app"
+	"net/http"
 
+	"moowda/app"
+	apiErrors "moowda/errors"
 	"moowda/web"
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
 
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
+}
+
+func customHTTPErrorHandler(err error, c echo.Context) {
+	if err == sql.ErrNoRows {
+		err = apiErrors.NotFound("the requested resource")
+		return
+	}
+
+	switch err.(type) {
+	case validation.Errors:
+		err = apiErrors.InvalidData(err.(validation.Errors))
+	}
+
+	if gorm.IsRecordNotFoundError(err) {
+		err = apiErrors.NotFound("the requested resource")
+	}
+
+	if _, ok := err.(*apiErrors.APIError); ok {
+		httpError := err.(*apiErrors.APIError)
+		if err := c.JSON(httpError.StatusCode(), httpError); err != nil {
+			c.Logger().Error(err)
+		}
+		return
+	}
+
+	if _, ok := err.(*echo.HTTPError); ok {
+		httpError := err.(*echo.HTTPError)
+		if err := c.JSON(httpError.Code, httpError); err != nil {
+			c.Logger().Error(err)
+		}
+		return
+	}
+
+	c.Logger().Error(c.JSON(http.StatusInternalServerError, echo.Map{"message": err.Error()}))
+}
+
 func run() {
 	flag.Parse()
 
 	e := echo.New()
+	e.HTTPErrorHandler = customHTTPErrorHandler
+	e.Validator = &CustomValidator{validator: validator.New()}
+	e.Pre(middleware.RemoveTrailingSlash())
 	e.Static("/static", "static")
 
 	corsConfig := middleware.DefaultCORSConfig
@@ -34,6 +84,11 @@ func run() {
 
 	if err := app.LoadConfig("./config"); err != nil {
 		panic(fmt.Errorf("invalid application configuration: %s", err))
+	}
+
+	// load error messages
+	if err := apiErrors.LoadMessages(app.Config.ErrorFile); err != nil {
+		panic(fmt.Errorf("failed to read the error message file: %s", err))
 	}
 
 	// =========================================================================

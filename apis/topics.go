@@ -1,11 +1,13 @@
 package apis
 
 import (
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo"
-	"moowda/models"
 	"net/http"
 	"strconv"
+
+	"github.com/jinzhu/gorm"
+	"github.com/labstack/echo"
+
+	"moowda/models"
 )
 
 type TopicAPI struct {
@@ -105,13 +107,6 @@ func (s *TopicAPI) GetTopicMessages(c echo.Context) error {
 	topicID, _ := strconv.Atoi(c.Param("id"))
 
 	var messages []models.TopicMessage
-
-	//if err := s.db.Where("topic_id = ?", topicID).
-	//	Select("topics_topicmessage.id, created_at, content, (?) as images",
-	//		s.db.Table("topics_image").Select("url").Where("topics_image.id = topics_topicmessage_images.image_id").QueryExpr(),
-	//	).Joins("left join topics_topicmessage_images on topics_topicmessage_images.topicmessage_id = topics_topicmessage.id").Find(&messages).Error; err != nil {
-	//	return err
-	//}
 
 	if err := s.db.Preload("User").Preload("Images.Image").Where("topic_id = ?", topicID).Find(&messages).Error; err != nil {
 		return err
