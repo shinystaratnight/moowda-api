@@ -56,7 +56,25 @@ func (s *UserAPI) Register(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, user)
+	// Set claims
+	claims := jwt.MapClaims{
+		"userID": user.ID,
+		"exp":    time.Now().Add(time.Hour * 72).Unix(),
+	}
+
+	// Create token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Generate encoded token and send it as response.
+	t, err := token.SignedString([]byte(app.Config.JWTSigningKey))
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"type":  "Bearer",
+		"token": t,
+	})
 }
 
 type LoginForm struct {
