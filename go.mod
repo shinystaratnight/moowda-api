@@ -11,6 +11,7 @@ require (
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
 	github.com/go-playground/validator v9.29.0+incompatible
+	github.com/gorilla/websocket v1.4.0
 	github.com/jinzhu/gorm v1.9.8
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.2.8

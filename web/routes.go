@@ -9,14 +9,15 @@ import (
 	"moowda/apis"
 	"moowda/app"
 	"moowda/models"
+	"moowda/sockets"
 	"moowda/storage"
 )
 
-func AddRoutes(e *echo.Echo, db *gorm.DB) {
+func AddRoutes(e *echo.Echo, db *gorm.DB, hub *sockets.Hub) {
 	r := e.Group("/api")
 
 	userAPI := apis.NewUserAPI(db)
-	topicAPI := apis.NewTopicAPI(db)
+	topicAPI := apis.NewTopicAPI(db, hub)
 
 	fileStorage, err := storage.Adapters[app.Config.StorageAdapter](app.Config.StorageConfig)
 	if err != nil {

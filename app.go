@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"moowda/sockets"
+	"net/http"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-playground/validator"
 	"github.com/jinzhu/gorm"
@@ -12,7 +15,6 @@ import (
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
 	_ "github.com/lib/pq"
-	"net/http"
 
 	"moowda/app"
 	apiErrors "moowda/errors"
@@ -102,9 +104,8 @@ func run() {
 	db.LogMode(true)
 	defer db.Close()
 
-	web.AddRoutes(e, db)
-
-	//web.RunHub(e)
+	hub := sockets.RunHub(e)
+	web.AddRoutes(e, db, hub)
 
 	e.Logger.Fatal(e.Start(*addr))
 }

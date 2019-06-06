@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"moowda/sockets"
 	"net/http"
 	"strconv"
 
@@ -13,11 +14,12 @@ import (
 )
 
 type TopicAPI struct {
-	db *gorm.DB
+	db  *gorm.DB
+	hub *sockets.Hub
 }
 
-func NewTopicAPI(db *gorm.DB) *TopicAPI {
-	return &TopicAPI{db: db}
+func NewTopicAPI(db *gorm.DB, hub *sockets.Hub) *TopicAPI {
+	return &TopicAPI{db: db, hub: hub}
 }
 
 func (s *TopicAPI) CreateTopic(c echo.Context) error {
@@ -32,6 +34,12 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 	if err := s.db.Create(topic).Error; err != nil {
 		return err
 	}
+
+	s.hub.BroadcastTopic(&models.TopicCard{
+		BaseModel:     models.BaseModel{ID: topic.ID},
+		Title:         topic.Title,
+		MessagesCount: 0,
+	})
 
 	return c.JSON(http.StatusOK, topic)
 }
