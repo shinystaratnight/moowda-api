@@ -85,5 +85,10 @@ func RunHub(e *echo.Echo) *Hub {
 		return
 	})
 
+	e.GET("/ws/topics/:id/events", func(c echo.Context) (err error) {
+		err = serveWs(hub, c)
+		return
+	})
+
 	return hub
 }
