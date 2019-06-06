@@ -10,7 +10,7 @@ import (
 // Hub class
 type Hub struct {
 	clients    map[*Client]bool
-	topics     chan *models.TopicCard
+	topics     chan *models.TopicDetail
 	register   chan *Client
 	unregister chan *Client
 }
@@ -19,7 +19,7 @@ type Hub struct {
 func newHub() *Hub {
 	return &Hub{
 		clients:    make(map[*Client]bool),
-		topics:     make(chan *models.TopicCard),
+		topics:     make(chan *models.TopicDetail),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 	}
@@ -37,13 +37,18 @@ func (h *Hub) Run() {
 				close(client.send)
 			}
 		case topic := <-h.topics:
+			messageType := "topic_created"
+			if topic.MessagesCount > 0 {
+				messageType = "‘topic_message_added"
+			}
+
 			type topicMessage struct {
-				Type  string            `json:"type"`
-				Topic *models.TopicCard `json:"topic"`
+				Type  string              `json:"type"`
+				Topic *models.TopicDetail `json:"topic"`
 			}
 
 			resp := &topicMessage{
-				Type:  "topic_created",
+				Type:  messageType,
 				Topic: topic,
 			}
 
@@ -66,7 +71,7 @@ func (h *Hub) send(data []byte) {
 	}
 }
 
-func (h *Hub) BroadcastTopic(topic *models.TopicCard) {
+func (h *Hub) BroadcastTopic(topic *models.TopicDetail) {
 	h.topics <- topic
 }
 
