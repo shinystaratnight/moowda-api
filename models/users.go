@@ -1,5 +1,10 @@
 package models
 
+import (
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+)
+
 type User struct {
 	BaseModel
 
@@ -13,4 +18,30 @@ type User struct {
 
 func (User) TableName() string {
 	return "users_user"
+}
+
+type RegisterRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (f RegisterRequest) Validate() error {
+	return validation.ValidateStruct(&f,
+		validation.Field(&f.Username, validation.Required, validation.Length(1, 24)),
+		validation.Field(&f.Email, validation.Required, is.Email),
+		validation.Field(&f.Password, validation.Required),
+	)
+}
+
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func (f LoginRequest) Validate() error {
+	return validation.ValidateStruct(&f,
+		validation.Field(&f.Username, validation.Required, validation.Length(1, 24)),
+		validation.Field(&f.Password, validation.Required),
+	)
 }

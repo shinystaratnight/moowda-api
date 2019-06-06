@@ -11,7 +11,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
@@ -30,27 +29,13 @@ func NewUserAPI(db *gorm.DB) *UserAPI {
 	return &UserAPI{db: db}
 }
 
-type RegisterRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func (f RegisterRequest) Validate() error {
-	return validation.ValidateStruct(&f,
-		validation.Field(&f.Username, validation.Required, validation.Length(1, 24)),
-		validation.Field(&f.Email, validation.Required, is.Email),
-		validation.Field(&f.Password, validation.Required),
-	)
-}
-
 func (s *UserAPI) Me(c echo.Context) error {
 	user := c.Get("user").(*models.User)
 	return c.JSON(http.StatusOK, user)
 }
 
 func (s *UserAPI) Register(c echo.Context) error {
-	registerRequest := new(RegisterRequest)
+	registerRequest := new(models.RegisterRequest)
 	if err := c.Bind(registerRequest); err != nil {
 		return err
 	}
@@ -107,20 +92,8 @@ func (s *UserAPI) Register(c echo.Context) error {
 	})
 }
 
-type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-func (f LoginRequest) Validate() error {
-	return validation.ValidateStruct(&f,
-		validation.Field(&f.Username, validation.Required, validation.Length(1, 24)),
-		validation.Field(&f.Password, validation.Required),
-	)
-}
-
 func (s *UserAPI) Login(c echo.Context) error {
-	loginRequest := new(LoginRequest)
+	loginRequest := new(models.LoginRequest)
 	if err := c.Bind(loginRequest); err != nil {
 		return err
 	}
@@ -163,7 +136,7 @@ func (s *UserAPI) Login(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
+	return c.JSON(http.StatusOK, echo.Map{
 		"type":  "Bearer",
 		"token": t,
 	})

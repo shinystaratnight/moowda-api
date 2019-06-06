@@ -1,6 +1,7 @@
 package models
 
 import (
+	validation "github.com/go-ozzo/ozzo-validation"
 	"time"
 )
 
@@ -98,4 +99,16 @@ type Image struct {
 
 func (Image) TableName() string {
 	return "topics_image"
+}
+
+type CreateTopicMessageRequest struct {
+	Content string `json:"content"`
+	Images  []uint `json:"images"`
+}
+
+func (r CreateTopicMessageRequest) Validate() error {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.Content, validation.Required),
+		validation.Field(&r.Images, validation.NilOrNotEmpty),
+	)
 }

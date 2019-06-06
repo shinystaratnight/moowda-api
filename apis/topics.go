@@ -1,10 +1,10 @@
 package apis
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation"
 	"net/http"
 	"strconv"
 
+	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 
@@ -62,22 +62,10 @@ func (s *TopicAPI) GetTopic(c echo.Context) error {
 	return c.JSON(http.StatusOK, topic)
 }
 
-type CreateTopicMessageRequest struct {
-	Content string `json:"content"`
-	Images  []uint `json:"images"`
-}
-
-func (r CreateTopicMessageRequest) Validate() error {
-	return validation.ValidateStruct(&r,
-		validation.Field(&r.Content, validation.Required),
-		validation.Field(&r.Images, validation.NilOrNotEmpty),
-	)
-}
-
 func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
 	topicID, _ := strconv.Atoi(c.Param("id"))
 
-	createTopicMessageRequest := new(CreateTopicMessageRequest)
+	createTopicMessageRequest := new(models.CreateTopicMessageRequest)
 	if err := c.Bind(createTopicMessageRequest); err != nil {
 		return err
 	}
@@ -147,7 +135,7 @@ func (s *TopicAPI) GetTopicMessages(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
+	return c.JSON(http.StatusOK, echo.Map{
 		"count":   len(messages),
 		"results": messages,
 	})
