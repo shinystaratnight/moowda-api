@@ -1,12 +1,14 @@
 package apis
 
 import (
+	validation "github.com/go-ozzo/ozzo-validation"
 	"net/http"
 	"strconv"
 
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 
+	apiErrors "moowda/errors"
 	"moowda/models"
 )
 
@@ -60,20 +62,53 @@ func (s *TopicAPI) GetTopic(c echo.Context) error {
 	return c.JSON(http.StatusOK, topic)
 }
 
+type CreateTopicMessageRequest struct {
+	Content string `json:"content"`
+	Images  []uint `json:"images"`
+}
+
+func (r CreateTopicMessageRequest) Validate() error {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.Content, validation.Required),
+		validation.Field(&r.Images, validation.NilOrNotEmpty),
+	)
+}
+
 func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
 	topicID, _ := strconv.Atoi(c.Param("id"))
 
-	message := new(models.TopicMessage)
-	if err := c.Bind(message); err != nil {
+	createTopicMessageRequest := new(CreateTopicMessageRequest)
+	if err := c.Bind(createTopicMessageRequest); err != nil {
 		return err
+	}
+	if err := createTopicMessageRequest.Validate(); err != nil {
+		return apiErrors.InvalidData(err.(validation.Errors))
 	}
 
 	user := c.Get("user").(*models.User)
 
-	message.TopicID = uint(topicID)
-	message.UserID = user.ID
+	message := models.TopicMessage{
+		Content: createTopicMessageRequest.Content,
+		TopicID: uint(topicID),
+		UserID:  user.ID,
+	}
 
-	if err := s.db.Create(message).Error; err != nil {
+	var image models.Image
+	for _, imageID := range createTopicMessageRequest.Images {
+		if err := s.db.Where("id = ?", imageID).First(&image).Error; err != nil {
+			return err
+		}
+
+		message.Images = append(message.Images, models.TopicMessageImage{
+			ImageID: image.ID,
+		})
+	}
+
+	if err := s.db.Create(&message).Error; err != nil {
+		return err
+	}
+
+	if err := s.db.Preload("User").Preload("Images.Image").Where("id = ?", message.ID).Find(&message).Error; err != nil {
 		return err
 	}
 
