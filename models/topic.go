@@ -1,7 +1,11 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation"
+	"moowda/app"
+	"strings"
 	"time"
 )
 
@@ -99,6 +103,23 @@ type Image struct {
 
 func (Image) TableName() string {
 	return "topics_image"
+}
+
+func (i *Image) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		ID   uint   `json:"id"`
+		URL  string `json:"url"`
+	}{
+		ID:   i.ID,
+		URL:  i.GetImageURL(),
+	})
+}
+
+func (i Image) GetImageURL() string {
+	if strings.HasPrefix("https://", i.URL) {
+		return i.URL
+	}
+	return fmt.Sprintf("%s/%s", app.Config.BaseURL, i.URL)
 }
 
 type CreateTopicMessageRequest struct {

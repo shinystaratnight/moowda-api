@@ -1,3 +1,6 @@
+# Base URL
+base_url: ""
+
 # Host
 server_port: 8080
 
