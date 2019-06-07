@@ -153,9 +153,7 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 	messageID, _ := strconv.Atoi(c.Param("messageID"))
 
 	message := new(models.TopicMessage)
-	if err := s.db.Where("id = ? and topic_id = ?", messageID, topicID).Find(message).Error; err != nil {
-		return err
-	}
+	s.db.Where("id = ? and topic_id = ?", messageID, topicID).Find(&message)
 
 	user := c.Get("user").(*models.User)
 
@@ -164,7 +162,13 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 		UserID:         user.ID,
 		TopicMessageID: message.ID,
 	}
-	if err := s.db.Create(&readMessage).Error; err != nil {
+
+	query := s.db.Create(&readMessage)
+	if message.ID > 0 {
+		query = s.db.Model(&readMessage).Update(readMessage)
+	}
+
+	if err := query.Error; err != nil {
 		return err
 	}
 
