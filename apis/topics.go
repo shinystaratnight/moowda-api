@@ -154,7 +154,7 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 	messageID, _ := strconv.Atoi(c.Param("messageID"))
 
 	message := new(models.TopicMessage)
-	if err := s.db.Where("id = ? and topic_id = ?", topicID, messageID).Find(message).Error; err != nil {
+	if err := s.db.Where("id = ? and topic_id = ?", messageID, topicID).Find(message).Error; err != nil {
 		return err
 	}
 
