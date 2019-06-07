@@ -44,7 +44,7 @@ func (h *Hub) Run() {
 		case topic := <-h.topicsCh:
 			messageType := "topic_created"
 			if topic.MessagesCount > 0 {
-				messageType = "‘topic_message_added"
+				messageType = "topic_message_added"
 			}
 
 			type topicMessage struct {
