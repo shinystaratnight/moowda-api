@@ -45,9 +45,8 @@ func (TopicCard) TableName() string {
 type TopicDetail struct {
 	BaseModel
 
-	Title           string    `gorm:"column:title" json:"title"`
-	MessagesCount   uint      `gorm:"-" json:"messages_count"`
-	LastMessageDate time.Time `gorm:"-" json:"last_message_date"`
+	Title         string `gorm:"column:title" json:"title"`
+	MessagesCount uint   `gorm:"-" json:"messages_count"`
 }
 
 func (TopicDetail) TableName() string {

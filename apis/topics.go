@@ -134,7 +134,16 @@ func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
 		return err
 	}
 
-	s.topicsHub.BroadcastTopicMessage(&message)
+	var topicDetail models.TopicDetail
+
+	if err := s.db.Where("id = ?", message.Topic.ID).
+		Select("id, title, (?) as messages_count",
+			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = ?", message.Topic.ID).QueryExpr(),
+		).Find(&topicDetail).Error; err != nil {
+		return err
+	}
+
+	s.topicsHub.BroadcastTopic(&topicDetail)
 	s.messagesHub.BroadcastMessage(&message)
 
 	return c.JSON(http.StatusOK, message)

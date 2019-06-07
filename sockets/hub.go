@@ -12,7 +12,6 @@ import (
 type Hub struct {
 	clients         map[*Client]bool
 	topicsCh        chan *models.TopicDetail
-	topicMessagesCh chan *models.TopicMessage
 	messagesCh      chan *models.TopicMessage
 	register        chan *Client
 	unregister      chan *Client
@@ -24,7 +23,6 @@ func newHub() *Hub {
 	return &Hub{
 		clients:         make(map[*Client]bool),
 		topicsCh:        make(chan *models.TopicDetail),
-		topicMessagesCh: make(chan *models.TopicMessage),
 		messagesCh:      make(chan *models.TopicMessage),
 		register:        make(chan *Client),
 		unregister:      make(chan *Client),
@@ -57,24 +55,6 @@ func (h *Hub) Run() {
 			resp := &topicMessage{
 				Type:  messageType,
 				Topic: topic,
-			}
-
-			data, err := json.Marshal(resp)
-			if err == nil {
-				h.send(data)
-			}
-		case msg := <-h.topicMessagesCh:
-			fmt.Printf("read %v", msg.Content)
-			messageType := "topic_message_added"
-
-			type message struct {
-				Type    string               `json:"type"`
-				Message *models.TopicMessage `json:"message"`
-			}
-
-			resp := &message{
-				Type:    messageType,
-				Message: msg,
 			}
 
 			data, err := json.Marshal(resp)
@@ -127,10 +107,6 @@ func (h *Hub) send(data []byte) {
 
 func (h *Hub) BroadcastTopic(topic *models.TopicDetail) {
 	h.topicsCh <- topic
-}
-
-func (h *Hub) BroadcastTopicMessage(message *models.TopicMessage) {
-	h.topicMessagesCh <- message
 }
 
 func (h *Hub) BroadcastMessage(message *models.TopicMessage) {
