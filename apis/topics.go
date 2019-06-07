@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"fmt"
 	"moowda/sockets"
 	"net/http"
 	"strconv"
@@ -52,9 +53,27 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 }
 
 func (s *TopicAPI) GetTopics(c echo.Context) error {
+	user, ok := c.Get("user").(*models.User)
+	fmt.Printf(">>> %v, %v", user, ok)
+
 	var topics []models.TopicCard
 
-	if err := s.db.Select("id, title, (?) as messages_count", s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr()).Find(&topics).Error; err != nil {
+	query := s.db.Select("id, title, (?) as unread_messages_count, (?) as messages_count",
+		s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
+		s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
+	).Find(&topics)
+
+	if ok {
+		query = s.db.Select("id, title, (?) as unread_messages_count, (?) as messages_count",
+			s.db.Table("topics_topicmessage").
+				Select("COUNT(*)").
+				Where("topics_topicmessage.topic_id = topics_topic.id and topics_topicmessage.user_id <> ? and topics_topicmessage.id > (select coalesce((?), 0))", user.ID,
+					s.db.Table("topics_topicmessageread").Select("coalesce(id, 0)").Where("topics_topicmessageread.topic_id = topics_topicmessage.topic_id").Order("id desc").Limit(1).QueryExpr(),
+				).QueryExpr(),
+			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
+		).Find(&topics)
+	}
+	if err := query.Error; err != nil {
 		return err
 	}
 

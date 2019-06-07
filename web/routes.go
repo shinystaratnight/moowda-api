@@ -35,13 +35,35 @@ func AddRoutes(e *echo.Echo, db *gorm.DB, topicsHub *sockets.Hub, messagesHub *s
 	r.POST("/register", userAPI.Register)
 	r.POST("/login", userAPI.Login)
 
-	r.GET("/topics", topicAPI.GetTopics)
 	r.GET("/topics/:id", topicAPI.GetTopic)
 
 	r.POST("/restore-request", userAPI.RestoreRequest)
 	r.POST("/restore", userAPI.Restore)
 
 	r.GET("/topics/:id/messages", topicAPI.GetTopicMessages)
+
+	// Skip Auth
+	skipAuth := e.Group("/api")
+	skipJwtConfig := middleware.DefaultJWTConfig
+	skipJwtConfig.SigningKey = []byte(app.Config.JWTSigningKey)
+	skipJwtConfig.SuccessHandler = func(ctx echo.Context) {
+		token := ctx.Get("user").(*jwt.Token)
+		claims := token.Claims.(jwt.MapClaims)
+
+		userID := claims["userID"]
+
+		user := new(models.User)
+		if err := db.Where("id = ?", userID).Find(user).Error; err != nil {
+			ctx.Error(err)
+			return
+		}
+		ctx.Set("user", user)
+	}
+	skipJwtConfig.ErrorHandler = func(err error) error {
+		return nil
+	}
+	skipAuth.Use(middleware.JWTWithConfig(skipJwtConfig))
+	skipAuth.GET("/topics", topicAPI.GetTopics)
 
 	// With Auth
 	auth := e.Group("/api")
