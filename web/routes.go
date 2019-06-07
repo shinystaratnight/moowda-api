@@ -2,10 +2,13 @@ package web
 
 import (
 	"fmt"
+	"moowda/services"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+
 	"moowda/apis"
 	"moowda/app"
 	"moowda/models"
@@ -16,7 +19,10 @@ import (
 func AddRoutes(e *echo.Echo, db *gorm.DB, topicsHub *sockets.Hub, messagesHub *sockets.Hub) {
 	r := e.Group("/api")
 
-	userAPI := apis.NewUserAPI(db)
+	// Start our Mail Service
+	mailService := services.NewEmailService(app.Config.SendgridAPIKey)
+	notificationService := services.NewNotificationService(mailService)
+	userAPI := apis.NewUserAPI(db, notificationService)
 	topicAPI := apis.NewTopicAPI(db, topicsHub, messagesHub)
 
 	fileStorage, err := storage.Adapters[app.Config.StorageAdapter](app.Config.StorageConfig)

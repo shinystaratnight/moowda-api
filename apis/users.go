@@ -1,10 +1,14 @@
 package apis
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"moowda/services"
 	"net/http"
 	"strings"
 	"time"
@@ -22,11 +26,12 @@ import (
 )
 
 type UserAPI struct {
-	db *gorm.DB
+	db                  *gorm.DB
+	notificationService *services.NotificationService
 }
 
-func NewUserAPI(db *gorm.DB) *UserAPI {
-	return &UserAPI{db: db}
+func NewUserAPI(db *gorm.DB, notificationService *services.NotificationService) *UserAPI {
+	return &UserAPI{db: db, notificationService: notificationService}
 }
 
 func (s *UserAPI) Me(c echo.Context) error {
@@ -71,6 +76,18 @@ func (s *UserAPI) Register(c echo.Context) error {
 		return errors.Wrap(err, "commit transaction")
 	}
 
+	signedToken, err := GenerateJWT(user)
+	if err != nil {
+		return apiErrors.InternalServerError(err)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"type":  "Bearer",
+		"token": signedToken,
+	})
+}
+
+func GenerateJWT(user *models.User) (string, error) {
 	// Set claims
 	claims := jwt.MapClaims{
 		"userID": user.ID,
@@ -81,15 +98,7 @@ func (s *UserAPI) Register(c echo.Context) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Generate encoded token and send it as response.
-	signedToken, err := token.SignedString([]byte(app.Config.JWTSigningKey))
-	if err != nil {
-		return errors.Wrap(err, "sign JWT token")
-	}
-
-	return c.JSON(http.StatusOK, map[string]string{
-		"type":  "Bearer",
-		"token": signedToken,
-	})
+	return token.SignedString([]byte(app.Config.JWTSigningKey))
 }
 
 func (s *UserAPI) Login(c echo.Context) error {
@@ -143,12 +152,77 @@ func (s *UserAPI) Login(c echo.Context) error {
 }
 
 func (s *UserAPI) RestoreRequest(c echo.Context) error {
+	restoreRequest := new(models.PasswordRestoreRequest)
+	if err := c.Bind(restoreRequest); err != nil {
+		return err
+	}
+
+	if err := restoreRequest.Validate(); err != nil {
+		return apiErrors.InvalidData(err.(validation.Errors))
+	}
+
+	var user models.User
+	if err := s.db.Where("email = ?", restoreRequest.Email).Find(&user).Error; err != nil {
+		return apiErrors.BadRequest(errors.Errorf("user with email %s doesn't exists", restoreRequest.Email))
+	}
+
+	hash := GenerateHash()
+
+	if err := s.db.Model(&user).UpdateColumns(models.User{ResetPasswordHash: sql.NullString{String: hash}}).Error; err != nil {
+		return apiErrors.InternalServerError(errors.Errorf("update hash for %s", restoreRequest.Email))
+	}
+
+	fmt.Printf(">> %v", user)
+
+	if err := s.notificationService.SendEmail(
+		app.Config.DefaultEmailAddress,
+		user.Email,
+		"Reset Password Request",
+		fmt.Sprintf("reset password request %s/restore/%s", app.Config.BaseURL, hash),
+		fmt.Sprintf("reset password request %s/restore/%s", app.Config.BaseURL, hash),
+	); err != nil {
+		return apiErrors.InternalServerError(err)
+	}
+
 	return c.NoContent(http.StatusOK)
 }
 
+func GenerateHash() string {
+	hash := md5.New()
+	hash.Write(RandASCIIBytes(20))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
 func (s *UserAPI) Restore(c echo.Context) error {
+	restoreRequest := new(models.RestoreRequest)
+	if err := c.Bind(restoreRequest); err != nil {
+		return err
+	}
+
+	if err := restoreRequest.Validate(); err != nil {
+		return apiErrors.InvalidData(err.(validation.Errors))
+	}
+
+	var user models.User
+	if err := s.db.Where("reset_password_hash = ?", restoreRequest.Hash).Find(&user).Error; err != nil {
+		return apiErrors.BadRequest(errors.Errorf("user with hash %s doesn't exists", restoreRequest.Hash))
+	}
+
+	salt := RandASCIIBytes(12)
+	hashStr := EncodePassword(restoreRequest.Password, salt)
+
+	newPassword := fmt.Sprintf("%s$%s$%s$%s", "pbkdf2_sha256", "150000", string(salt), hashStr)
+	if err := s.db.Model(&user).Updates(map[string]interface{}{"password": newPassword, "reset_password_hash": gorm.Expr("NULL")}).Error; err != nil {
+		return apiErrors.InternalServerError(errors.Errorf("update password"))
+	}
+
+	signedToken, err := GenerateJWT(&user)
+	if err != nil {
+		return apiErrors.InternalServerError(err)
+	}
+
 	return c.JSON(http.StatusOK, map[string]string{
-		"token": "-",
+		"token": signedToken,
 	})
 }
 
