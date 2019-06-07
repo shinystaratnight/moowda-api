@@ -65,7 +65,7 @@ func (h *Hub) Run() {
 			}
 		case msg := <-h.topicMessagesCh:
 			fmt.Printf("read %v", msg.Content)
-			messageType := "message_added"
+			messageType := "topic_message_added"
 
 			type message struct {
 				Type    string               `json:"type"`
