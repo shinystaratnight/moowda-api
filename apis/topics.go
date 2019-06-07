@@ -37,17 +37,16 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 		return err
 	}
 
-	var topicDetail models.TopicDetail
-
+	var newTopic models.TopicCard
 	if err := s.db.Where("id = ?", topic.ID).
-		Select("id, title, (?) as messages_count, (?) as last_message_date",
-			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = ?", topic.ID).QueryExpr(),
-			s.db.Table("topics_topicmessage").Select("created_at").Where("topics_topicmessage.topic_id = ?", topic.ID).Order("id DESC").Limit(1).QueryExpr(),
-		).Find(&topicDetail).Error; err != nil {
+		Select("id, title, (?) as unread_messages_count, (?) as messages_count",
+			0,
+			s.db.Table("topics_topicmessage").Select("count(*)").Where("topics_topicmessage.topic_id = ?", topic.ID).QueryExpr(),
+		).Find(&topic).Error; err != nil {
 		return err
 	}
 
-	s.topicsHub.BroadcastTopic(&topicDetail)
+	s.topicsHub.BroadcastTopic(&newTopic)
 
 	return c.JSON(http.StatusOK, topic)
 }
@@ -134,16 +133,16 @@ func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
 		return err
 	}
 
-	var topicDetail models.TopicDetail
-
-	if err := s.db.Where("id = ?", message.Topic.ID).
-		Select("id, title, (?) as messages_count",
-			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = ?", message.Topic.ID).QueryExpr(),
-		).Find(&topicDetail).Error; err != nil {
+	var newTopic models.TopicCard
+	if err := s.db.Where("id = ?", message.TopicID).
+		Select("id, title, (?) as unread_messages_count, (?) as messages_count",
+			0,
+			s.db.Table("topics_topicmessage").Select("count(*)").Where("topics_topicmessage.topic_id = ?", message.TopicID).QueryExpr(),
+		).Find(&newTopic).Error; err != nil {
 		return err
 	}
 
-	s.topicsHub.BroadcastTopic(&topicDetail)
+	s.topicsHub.BroadcastTopic(&newTopic)
 	s.messagesHub.BroadcastMessage(&message)
 
 	return c.JSON(http.StatusOK, message)

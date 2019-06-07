@@ -10,23 +10,23 @@ import (
 
 // Hub class
 type Hub struct {
-	clients         map[*Client]bool
-	topicsCh        chan *models.TopicDetail
-	messagesCh      chan *models.TopicMessage
-	register        chan *Client
-	unregister      chan *Client
-	topics          map[int][]*Client
+	clients    map[*Client]bool
+	topicsCh   chan *models.TopicCard
+	messagesCh chan *models.TopicMessage
+	register   chan *Client
+	unregister chan *Client
+	topics     map[int][]*Client
 }
 
 // NewHub func
 func newHub() *Hub {
 	return &Hub{
-		clients:         make(map[*Client]bool),
-		topicsCh:        make(chan *models.TopicDetail),
-		messagesCh:      make(chan *models.TopicMessage),
-		register:        make(chan *Client),
-		unregister:      make(chan *Client),
-		topics:          map[int][]*Client{},
+		clients:    make(map[*Client]bool),
+		topicsCh:   make(chan *models.TopicCard),
+		messagesCh: make(chan *models.TopicMessage),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+		topics:     map[int][]*Client{},
 	}
 }
 
@@ -48,8 +48,8 @@ func (h *Hub) Run() {
 			}
 
 			type topicMessage struct {
-				Type  string              `json:"type"`
-				Topic *models.TopicDetail `json:"topic"`
+				Type  string            `json:"type"`
+				Topic *models.TopicCard `json:"topic"`
 			}
 
 			resp := &topicMessage{
@@ -105,7 +105,7 @@ func (h *Hub) send(data []byte) {
 	}
 }
 
-func (h *Hub) BroadcastTopic(topic *models.TopicDetail) {
+func (h *Hub) BroadcastTopic(topic *models.TopicCard) {
 	h.topicsCh <- topic
 }
 
