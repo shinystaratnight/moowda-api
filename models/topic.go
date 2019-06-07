@@ -107,11 +107,11 @@ func (Image) TableName() string {
 
 func (i *Image) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		ID   uint   `json:"id"`
-		URL  string `json:"url"`
+		ID  uint   `json:"id"`
+		URL string `json:"url"`
 	}{
-		ID:   i.ID,
-		URL:  i.GetImageURL(),
+		ID:  i.ID,
+		URL: i.GetImageURL(),
 	})
 }
 
@@ -130,6 +130,6 @@ type CreateTopicMessageRequest struct {
 func (r CreateTopicMessageRequest) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Content, validation.Required),
-		validation.Field(&r.Images, validation.NilOrNotEmpty),
+		validation.Field(&r.Images, validation.NotNil),
 	)
 }
