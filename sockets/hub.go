@@ -77,7 +77,7 @@ func (h *Hub) Run() {
 
 			data, err := json.Marshal(resp)
 			if err == nil {
-				fmt.Printf("send %v", msg.Topic.ID)
+				h.send(data)
 				h.sendToTopic(int(msg.Topic.ID), data)
 			}
 		}
