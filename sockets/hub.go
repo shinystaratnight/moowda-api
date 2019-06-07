@@ -10,23 +10,25 @@ import (
 
 // Hub class
 type Hub struct {
-	clients    map[*Client]bool
-	topicsCh   chan *models.TopicDetail
-	messagesCh chan *models.TopicMessage
-	register   chan *Client
-	unregister chan *Client
-	topics     map[int][]*Client
+	clients         map[*Client]bool
+	topicsCh        chan *models.TopicDetail
+	topicMessagesCh chan *models.TopicMessage
+	messagesCh      chan *models.TopicMessage
+	register        chan *Client
+	unregister      chan *Client
+	topics          map[int][]*Client
 }
 
 // NewHub func
 func newHub() *Hub {
 	return &Hub{
-		clients:    make(map[*Client]bool),
-		topicsCh:   make(chan *models.TopicDetail),
-		messagesCh: make(chan *models.TopicMessage),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		topics:     map[int][]*Client{},
+		clients:         make(map[*Client]bool),
+		topicsCh:        make(chan *models.TopicDetail),
+		topicMessagesCh: make(chan *models.TopicMessage),
+		messagesCh:      make(chan *models.TopicMessage),
+		register:        make(chan *Client),
+		unregister:      make(chan *Client),
+		topics:          map[int][]*Client{},
 	}
 }
 
@@ -61,7 +63,7 @@ func (h *Hub) Run() {
 			if err == nil {
 				h.send(data)
 			}
-		case msg := <-h.messagesCh:
+		case msg := <-h.topicMessagesCh:
 			fmt.Printf("read %v", msg.Content)
 			messageType := "message_added"
 
@@ -78,6 +80,23 @@ func (h *Hub) Run() {
 			data, err := json.Marshal(resp)
 			if err == nil {
 				h.send(data)
+			}
+		case msg := <-h.messagesCh:
+			fmt.Printf("read %v", msg.Content)
+			messageType := "message_added"
+
+			type message struct {
+				Type    string               `json:"type"`
+				Message *models.TopicMessage `json:"message"`
+			}
+
+			resp := &message{
+				Type:    messageType,
+				Message: msg,
+			}
+
+			data, err := json.Marshal(resp)
+			if err == nil {
 				h.sendToTopic(int(msg.Topic.ID), data)
 			}
 		}
@@ -108,6 +127,10 @@ func (h *Hub) send(data []byte) {
 
 func (h *Hub) BroadcastTopic(topic *models.TopicDetail) {
 	h.topicsCh <- topic
+}
+
+func (h *Hub) BroadcastTopicMessage(message *models.TopicMessage) {
+	h.topicMessagesCh <- message
 }
 
 func (h *Hub) BroadcastMessage(message *models.TopicMessage) {

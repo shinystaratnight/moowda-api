@@ -134,7 +134,7 @@ func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
 		return err
 	}
 
-	s.topicsHub.BroadcastMessage(&message)
+	s.topicsHub.BroadcastTopicMessage(&message)
 	s.messagesHub.BroadcastMessage(&message)
 
 	return c.JSON(http.StatusOK, message)
