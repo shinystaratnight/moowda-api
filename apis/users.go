@@ -168,7 +168,7 @@ func (s *UserAPI) RestoreRequest(c echo.Context) error {
 
 	hash := GenerateHash()
 
-	if err := s.db.Model(&user).UpdateColumns(models.User{ResetPasswordHash: sql.NullString{String: hash}}).Error; err != nil {
+	if err := s.db.Model(&user).UpdateColumns(models.User{ResetPasswordHash: sql.NullString{String: hash, Valid: true}}).Error; err != nil {
 		return apiErrors.InternalServerError(errors.Errorf("update hash for %s", restoreRequest.Email))
 	}
 
