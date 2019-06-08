@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -168,7 +167,7 @@ func (s *UserAPI) RestoreRequest(c echo.Context) error {
 
 	hash := GenerateHash()
 
-	if err := s.db.Model(&user).UpdateColumns(models.User{ResetPasswordHash: sql.NullString{String: hash, Valid: true}}).Error; err != nil {
+	if err := s.db.Model(&user).UpdateColumns(models.User{ResetPasswordHash: &hash}).Error; err != nil {
 		return apiErrors.InternalServerError(errors.Errorf("update hash for %s", restoreRequest.Email))
 	}
 

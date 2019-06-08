@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 )
@@ -9,13 +8,13 @@ import (
 type User struct {
 	BaseModel
 
-	Username          string         `gorm:"column:login" json:"username"`
-	Email             string         `gorm:"column:email" json:"email"`
-	Password          string         `gorm:"column:password" json:"-"`
-	IsSuperuser       bool           `gorm:"column:is_superuser" json:"-"`
-	IsStaff           bool           `gorm:"column:is_staff" json:"-"`
-	IsActive          bool           `gorm:"column:is_active" json:"-"`
-	ResetPasswordHash sql.NullString `gorm:"column:reset_password_hash" json:"-"`
+	Username          string  `gorm:"column:login" json:"username"`
+	Email             string  `gorm:"column:email" json:"email"`
+	Password          string  `gorm:"column:password" json:"-"`
+	IsSuperuser       bool    `gorm:"column:is_superuser" json:"-"`
+	IsStaff           bool    `gorm:"column:is_staff" json:"-"`
+	IsActive          bool    `gorm:"column:is_active" json:"-"`
+	ResetPasswordHash *string `gorm:"column:reset_password_hash" json:"-"`
 }
 
 func (User) TableName() string {
