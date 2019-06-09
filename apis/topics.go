@@ -165,7 +165,7 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 
 	var query *gorm.DB
 	if message.ID > 0 {
-		query = s.db.Model(&readMessage).Update(readMessage)
+		query = s.db.Model(&readMessage).Where("id = ?", messageID).Update(readMessage)
 	} else {
 		query = s.db.Create(&readMessage)
 	}
