@@ -69,6 +69,8 @@ func run() {
 	flag.Parse()
 
 	e := echo.New()
+	e.Use(middleware.BodyLimit("5M"))
+
 	e.HTTPErrorHandler = customHTTPErrorHandler
 	e.Validator = &CustomValidator{validator: validator.New()}
 	e.Pre(middleware.RemoveTrailingSlash())
