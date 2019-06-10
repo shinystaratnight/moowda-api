@@ -42,7 +42,7 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 		Select("id, title, (?) as unread_messages_count, (?) as messages_count",
 			0,
 			s.db.Table("topics_topicmessage").Select("count(*)").Where("topics_topicmessage.topic_id = ?", topic.ID).QueryExpr(),
-		).Find(&topic).Error; err != nil {
+		).Find(&newTopic).Error; err != nil {
 		return err
 	}
 
