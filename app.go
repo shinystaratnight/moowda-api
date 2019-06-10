@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"moowda/services"
 	"moowda/sockets"
 	"net/http"
 
@@ -106,8 +107,10 @@ func run() {
 	db.LogMode(true)
 	defer db.Close()
 
-	topicsHub := sockets.RunTopicsHub(e)
-	messagesHub := sockets.RunMessagesHub(e)
+	topicService := services.NewTopicService(db)
+
+	topicsHub := sockets.RunTopicsHub(e, topicService)
+	messagesHub := sockets.RunMessagesHub(e, topicService)
 
 	web.AddRoutes(e, db, topicsHub, messagesHub)
 

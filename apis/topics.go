@@ -37,16 +37,7 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 		return err
 	}
 
-	var newTopic models.TopicCard
-	if err := s.db.Where("id = ?", topic.ID).
-		Select("id, title, (?) as unread_messages_count, (?) as messages_count",
-			0,
-			s.db.Table("topics_topicmessage").Select("count(*)").Where("topics_topicmessage.topic_id = ?", topic.ID).QueryExpr(),
-		).Find(&newTopic).Error; err != nil {
-		return err
-	}
-
-	s.topicsHub.BroadcastTopic(&newTopic)
+	s.topicsHub.BroadcastTopic(topic)
 
 	return c.JSON(http.StatusOK, topic)
 }
@@ -57,11 +48,7 @@ func (s *TopicAPI) GetTopics(c echo.Context) error {
 
 	var topics []models.TopicCard
 
-	query := s.db.Select("id, title, (?) as unread_messages_count, (?) as messages_count",
-		s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
-		s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
-	).Find(&topics)
-
+	var query *gorm.DB
 	if ok {
 		query = s.db.Select("id, title, (?) as unread_messages_count, (?) as messages_count",
 			s.db.Table("topics_topicmessage").
@@ -69,6 +56,11 @@ func (s *TopicAPI) GetTopics(c echo.Context) error {
 				Where("topics_topicmessage.topic_id = topics_topic.id and topics_topicmessage.user_id <> ? and topics_topicmessage.id > (select coalesce((?), 0))", user.ID,
 					s.db.Table("topics_topicmessageread").Select("coalesce(id, 0)").Where("topics_topicmessageread.topic_id = topics_topicmessage.topic_id").Order("id desc").Limit(1).QueryExpr(),
 				).QueryExpr(),
+			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
+		).Find(&topics)
+	} else {
+		query = s.db.Select("id, title, (?) as unread_messages_count, (?) as messages_count",
+			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
 			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
 		).Find(&topics)
 	}
@@ -142,7 +134,7 @@ func (s *TopicAPI) CreateTopicMessage(c echo.Context) error {
 		return err
 	}
 
-	s.topicsHub.BroadcastTopic(&newTopic)
+	s.topicsHub.BroadcastTopic(&message.Topic)
 	s.messagesHub.BroadcastMessage(&message)
 
 	return c.JSON(http.StatusOK, message)

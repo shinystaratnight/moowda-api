@@ -4,29 +4,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo"
+	"github.com/labstack/gommon/log"
+	"moowda/services"
 
 	"moowda/models"
 )
 
 // Hub class
 type Hub struct {
-	clients    map[*Client]bool
-	topicsCh   chan *models.TopicCard
-	messagesCh chan *models.TopicMessage
-	register   chan *Client
-	unregister chan *Client
-	topics     map[int][]*Client
+	clients        map[*Client]bool
+	topicUpdatedCh chan *models.Topic
+	messagesCh     chan *models.TopicMessage
+	register       chan *Client
+	unregister     chan *Client
+	topics         map[int][]*Client
+	topicService   *services.TopicService
 }
 
 // NewHub func
-func newHub() *Hub {
+func newHub(topicService *services.TopicService) *Hub {
 	return &Hub{
-		clients:    make(map[*Client]bool),
-		topicsCh:   make(chan *models.TopicCard),
-		messagesCh: make(chan *models.TopicMessage),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		topics:     map[int][]*Client{},
+		clients:        make(map[*Client]bool),
+		topicUpdatedCh: make(chan *models.Topic),
+		messagesCh:     make(chan *models.TopicMessage),
+		register:       make(chan *Client),
+		unregister:     make(chan *Client),
+		topics:         map[int][]*Client{},
+		topicService:   topicService,
 	}
 }
 
@@ -41,25 +45,39 @@ func (h *Hub) Run() {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case topic := <-h.topicsCh:
-			messageType := "topic_created"
-			if topic.MessagesCount > 0 {
-				messageType = "topic_message_added"
-			}
-
+		case topic := <-h.topicUpdatedCh:
 			type topicMessage struct {
 				Type  string            `json:"type"`
 				Topic *models.TopicCard `json:"topic"`
 			}
 
-			resp := &topicMessage{
-				Type:  messageType,
-				Topic: topic,
-			}
+			for client := range h.clients {
+				topicCard, err := h.topicService.GetTopicCardForUser(topic, client.user)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
 
-			data, err := json.Marshal(resp)
-			if err == nil {
-				h.send(data)
+				messageType := "topic_created"
+				if topicCard.MessagesCount > 0 {
+					messageType = "topic_message_added"
+				}
+				resp := &topicMessage{
+					Type:  messageType,
+					Topic: topicCard,
+				}
+
+				data, err := json.Marshal(resp)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				select {
+				case client.send <- data:
+				default:
+					close(client.send)
+					delete(h.clients, client)
+				}
 			}
 		case msg := <-h.messagesCh:
 			fmt.Printf("read %v", msg.Content)
@@ -105,8 +123,8 @@ func (h *Hub) send(data []byte) {
 	}
 }
 
-func (h *Hub) BroadcastTopic(topic *models.TopicCard) {
-	h.topicsCh <- topic
+func (h *Hub) BroadcastTopic(topic *models.Topic) {
+	h.topicUpdatedCh <- topic
 }
 
 func (h *Hub) BroadcastMessage(message *models.TopicMessage) {
@@ -114,8 +132,8 @@ func (h *Hub) BroadcastMessage(message *models.TopicMessage) {
 }
 
 // RunHub func
-func RunTopicsHub(e *echo.Echo) *Hub {
-	hub := newHub()
+func RunTopicsHub(e *echo.Echo, topicService *services.TopicService) *Hub {
+	hub := newHub(topicService)
 	go hub.Run()
 
 	e.GET("/ws/topics/events", func(c echo.Context) (err error) {
@@ -127,8 +145,8 @@ func RunTopicsHub(e *echo.Echo) *Hub {
 }
 
 // RunHub func
-func RunMessagesHub(e *echo.Echo) *Hub {
-	hub := newHub()
+func RunMessagesHub(e *echo.Echo, topicService *services.TopicService) *Hub {
+	hub := newHub(topicService)
 	go hub.Run()
 
 	e.GET("/ws/topics/:id/events", func(c echo.Context) (err error) {
