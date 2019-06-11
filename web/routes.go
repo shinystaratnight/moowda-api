@@ -44,9 +44,12 @@ func AddRoutes(e *echo.Echo, db *gorm.DB) {
 	}
 
 	r := e.Group("/api")
-	
+
 	skipAuth := e.Group("/api")
 	skipAuth.Use(middleware.JWTWithConfig(skipJwtConfig))
+
+	skipAuthWS := e.Group("/ws")
+	skipAuthWS.Use(middleware.JWTWithConfig(skipJwtConfig))
 
 	// Services
 	mailService := services.NewEmailService(app.Config.SendgridAPIKey)
@@ -58,8 +61,8 @@ func AddRoutes(e *echo.Echo, db *gorm.DB) {
 	}
 	topicService := services.NewTopicService(db)
 
-	topicsHub := sockets.RunTopicsHub(skipAuth, topicService)
-	messagesHub := sockets.RunMessagesHub(skipAuth, topicService)
+	topicsHub := sockets.RunTopicsHub(skipAuthWS, topicService)
+	messagesHub := sockets.RunMessagesHub(skipAuthWS, topicService)
 
 	// Configure API
 	userAPI := apis.NewUserAPI(db, notificationService)

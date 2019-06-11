@@ -136,7 +136,7 @@ func RunTopicsHub(e *echo.Group, topicService *services.TopicService) *Hub {
 	hub := newHub(topicService)
 	go hub.Run()
 
-	e.GET("/ws/topics/events", func(c echo.Context) (err error) {
+	e.GET("/topics/events", func(c echo.Context) (err error) {
 		err = serveWs(hub, c)
 		return
 	})
@@ -149,7 +149,7 @@ func RunMessagesHub(e *echo.Group, topicService *services.TopicService) *Hub {
 	hub := newHub(topicService)
 	go hub.Run()
 
-	e.GET("/ws/topics/:id/events", func(c echo.Context) (err error) {
+	e.GET("/topics/:id/events", func(c echo.Context) (err error) {
 		err = serveWs(hub, c)
 		return
 	})
