@@ -54,7 +54,7 @@ func (s *TopicAPI) GetTopics(c echo.Context) error {
 			s.db.Table("topics_topicmessage").
 				Select("COUNT(*)").
 				Where("topics_topicmessage.topic_id = topics_topic.id and topics_topicmessage.user_id <> ? and topics_topicmessage.id > (select coalesce((?), 0))", user.ID,
-					s.db.Table("topics_topicmessageread").Select("coalesce(id, 0)").Where("topics_topicmessageread.topic_id = topics_topicmessage.topic_id").Order("id desc").Limit(1).QueryExpr(),
+					s.db.Table("topics_topicmessageread").Select("coalesce(message_id, 0)").Where("topics_topicmessageread.topic_id = topics_topicmessage.topic_id").Order("id desc").Limit(1).QueryExpr(),
 				).QueryExpr(),
 			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
 		).Find(&topics)
@@ -144,20 +144,20 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 	topicID, _ := strconv.Atoi(c.Param("topicID"))
 	messageID, _ := strconv.Atoi(c.Param("messageID"))
 
-	message := new(models.TopicMessage)
-	s.db.Where("id = ? and topic_id = ?", messageID, topicID).Find(&message)
+	messageRead := new(models.TopicMessageRead)
+	s.db.Where("message_id = ? and topic_id = ?", messageID, topicID).Find(&messageRead)
 
 	user := c.Get("user").(*models.User)
 
 	readMessage := models.TopicMessageRead{
-		TopicID:        message.TopicID,
+		TopicID:        uint(topicID),
 		UserID:         user.ID,
-		TopicMessageID: message.ID,
+		TopicMessageID: uint(messageID),
 	}
 
 	var query *gorm.DB
-	if message.ID > 0 {
-		query = s.db.Model(&readMessage).Where("id = ?", messageID).Update(readMessage)
+	if messageRead.ID > 0 {
+		query = s.db.Model(&readMessage).Where("message_id = ?", messageID).Update(readMessage)
 	} else {
 		query = s.db.Create(&readMessage)
 	}
