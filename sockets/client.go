@@ -98,6 +98,13 @@ func (c *Client) writePump() {
 
 // ServeWs handles websocket requests from the peer.
 func serveWs(hub *Hub, c echo.Context) (err error) {
+	u := c.Get("user")
+
+	var user *models.User
+	if u != nil {
+		user = u.(*models.User)
+	}
+
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
@@ -107,7 +114,7 @@ func serveWs(hub *Hub, c echo.Context) (err error) {
 		hub:  hub,
 		conn: conn,
 		send: make(chan []byte, 256),
-		user: nil,
+		user: user,
 	}
 
 	hub.register <- client
