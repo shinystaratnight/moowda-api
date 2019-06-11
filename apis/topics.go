@@ -145,7 +145,7 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 	messageID, _ := strconv.Atoi(c.Param("messageID"))
 
 	messageRead := new(models.TopicMessageRead)
-	s.db.Where("message_id = ? and topic_id = ?", messageID, topicID).Find(&messageRead)
+	s.db.Where("topic_id = ?", topicID).Find(&messageRead)
 
 	user := c.Get("user").(*models.User)
 
@@ -157,7 +157,7 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 
 	var query *gorm.DB
 	if messageRead.ID > 0 {
-		query = s.db.Model(&readMessage).Where("message_id = ?", messageID).Update(readMessage)
+		query = s.db.Model(&readMessage).Where("id = ?", messageRead.ID).Update(readMessage)
 	} else {
 		query = s.db.Create(&readMessage)
 	}
