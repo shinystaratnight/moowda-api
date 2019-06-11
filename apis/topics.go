@@ -144,10 +144,10 @@ func (s *TopicAPI) ReadTopicMessage(c echo.Context) error {
 	topicID, _ := strconv.Atoi(c.Param("topicID"))
 	messageID, _ := strconv.Atoi(c.Param("messageID"))
 
-	messageRead := new(models.TopicMessageRead)
-	s.db.Where("topic_id = ?", topicID).Find(&messageRead)
-
 	user := c.Get("user").(*models.User)
+
+	messageRead := new(models.TopicMessageRead)
+	s.db.Where("topic_id = ? and user_id = ?", topicID, user.ID).Find(&messageRead)
 
 	readMessage := models.TopicMessageRead{
 		TopicID:        uint(topicID),
