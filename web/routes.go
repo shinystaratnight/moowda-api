@@ -20,34 +20,7 @@ const (
 	UserContextKey = "user"
 )
 
-func AddRoutes(e *echo.Echo, db *gorm.DB, topicsHub *sockets.Hub, messagesHub *sockets.Hub) {
-	r := e.Group("/api")
-
-	// Services
-	mailService := services.NewEmailService(app.Config.SendgridAPIKey)
-	notificationService := services.NewNotificationService(mailService)
-
-	fileStorage, err := storage.Adapters[app.Config.StorageAdapter](app.Config.StorageConfig)
-	if err != nil {
-		panic(fmt.Errorf("file storage wasnt able to start due to the error: %v", err))
-	}
-
-	// Configure API
-	userAPI := apis.NewUserAPI(db, notificationService)
-	topicAPI := apis.NewTopicAPI(db, topicsHub, messagesHub)
-	imagesAPI := apis.NewImagesAPI(db, fileStorage)
-
-	// Without Auth
-	r.POST("/register", userAPI.Register)
-	r.POST("/login", userAPI.Login)
-
-	r.GET("/topics/:id", topicAPI.GetTopic)
-
-	r.POST("/restore-request", userAPI.RestoreRequest)
-	r.POST("/restore", userAPI.Restore)
-
-	r.GET("/topics/:id/messages", topicAPI.GetTopicMessages)
-
+func AddRoutes(e *echo.Echo, db *gorm.DB) {
 	// Possible Without Auth Config
 	skipJwtConfig := middleware.DefaultJWTConfig
 	skipJwtConfig.SigningKey = []byte(app.Config.JWTSigningKey)
@@ -70,8 +43,40 @@ func AddRoutes(e *echo.Echo, db *gorm.DB, topicsHub *sockets.Hub, messagesHub *s
 		return nil
 	}
 
+	r := e.Group("/api")
+	
 	skipAuth := e.Group("/api")
 	skipAuth.Use(middleware.JWTWithConfig(skipJwtConfig))
+
+	// Services
+	mailService := services.NewEmailService(app.Config.SendgridAPIKey)
+	notificationService := services.NewNotificationService(mailService)
+
+	fileStorage, err := storage.Adapters[app.Config.StorageAdapter](app.Config.StorageConfig)
+	if err != nil {
+		panic(fmt.Errorf("file storage wasnt able to start due to the error: %v", err))
+	}
+	topicService := services.NewTopicService(db)
+
+	topicsHub := sockets.RunTopicsHub(skipAuth, topicService)
+	messagesHub := sockets.RunMessagesHub(skipAuth, topicService)
+
+	// Configure API
+	userAPI := apis.NewUserAPI(db, notificationService)
+	topicAPI := apis.NewTopicAPI(db, topicsHub, messagesHub)
+	imagesAPI := apis.NewImagesAPI(db, fileStorage)
+
+	// Without Auth
+	r.POST("/register", userAPI.Register)
+	r.POST("/login", userAPI.Login)
+
+	r.GET("/topics/:id", topicAPI.GetTopic)
+
+	r.POST("/restore-request", userAPI.RestoreRequest)
+	r.POST("/restore", userAPI.Restore)
+
+	r.GET("/topics/:id/messages", topicAPI.GetTopicMessages)
+
 	skipAuth.GET("/topics", topicAPI.GetTopics)
 
 	// With Auth Config

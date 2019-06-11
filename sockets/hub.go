@@ -132,7 +132,7 @@ func (h *Hub) BroadcastMessage(message *models.TopicMessage) {
 }
 
 // RunHub func
-func RunTopicsHub(e *echo.Echo, topicService *services.TopicService) *Hub {
+func RunTopicsHub(e *echo.Group, topicService *services.TopicService) *Hub {
 	hub := newHub(topicService)
 	go hub.Run()
 
@@ -145,7 +145,7 @@ func RunTopicsHub(e *echo.Echo, topicService *services.TopicService) *Hub {
 }
 
 // RunHub func
-func RunMessagesHub(e *echo.Echo, topicService *services.TopicService) *Hub {
+func RunMessagesHub(e *echo.Group, topicService *services.TopicService) *Hub {
 	hub := newHub(topicService)
 	go hub.Run()
 
