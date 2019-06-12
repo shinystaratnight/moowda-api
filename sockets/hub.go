@@ -52,6 +52,10 @@ func (h *Hub) Run() {
 			}
 
 			for client := range h.clients {
+				if client.user != nil {
+					fmt.Printf("userID: %v", client.user.ID)
+				}
+
 				topicCard, err := h.topicService.GetTopicCardForUser(topic, client.user)
 				if err != nil {
 					log.Error(err)

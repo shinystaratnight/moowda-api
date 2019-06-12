@@ -21,6 +21,8 @@ const (
 )
 
 func AddRoutes(e *echo.Echo, db *gorm.DB) {
+	e.Use(middleware.TokenHeader)
+
 	// Possible Without Auth Config
 	skipJwtConfig := middleware.DefaultJWTConfig
 	skipJwtConfig.SigningKey = []byte(app.Config.JWTSigningKey)

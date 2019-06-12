@@ -80,7 +80,7 @@ func (s *UserAPI) Register(c echo.Context) error {
 		return apiErrors.InternalServerError(err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
+	return c.JSON(http.StatusOK, echo.Map{
 		"type":  "Bearer",
 		"token": signedToken,
 	})
