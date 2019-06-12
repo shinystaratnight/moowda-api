@@ -39,8 +39,8 @@ func (r *ImagesAPI) Upload(c echo.Context) error {
 	}
 
 	image := models.Image{
-		User: *user,
-		URL:  url,
+		UserID: user.ID,
+		URL:    url,
 	}
 
 	if err := r.db.Create(&image).Error; err != nil {
