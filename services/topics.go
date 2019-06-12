@@ -22,7 +22,7 @@ func (s *TopicService) GetTopicCardForUser(topic *models.Topic, user *models.Use
 			s.db.Table("topics_topicmessage").
 				Select("COUNT(*)").
 				Where("topics_topicmessage.topic_id = topics_topic.id and topics_topicmessage.user_id <> ? and topics_topicmessage.id > (select coalesce((?), 0))", user.ID,
-					s.db.Table("topics_topicmessageread").Select("coalesce(message_id, 0)").Where("topics_topicmessageread.topic_id = ?", topic.ID).Order("id desc").Limit(1).QueryExpr(),
+					s.db.Table("topics_topicmessageread").Select("coalesce(message_id, 0)").Where("topics_topicmessageread.topic_id = ? and topics_topicmessageread.user_id = ?", topic.ID, user.ID).Limit(1).QueryExpr(),
 				).QueryExpr(),
 			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
 		).Where("id = ?", topic.ID).Find(&newTopic)
