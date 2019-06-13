@@ -11,8 +11,7 @@ import (
 var Config appConfig
 
 type appConfig struct {
-	BaseURL    string `mapstructure:"base_url"`
-	UploadPath string `mapstructure:"upload_path"`
+	BaseURL string `mapstructure:"base_url"`
 	// the path to the error message file. Defaults to "config/errors.yaml"
 	ErrorFile string `mapstructure:"error_file"`
 	// the server port. Defaults to 8080
@@ -49,7 +48,6 @@ type appConfig struct {
 func (config appConfig) Validate() error {
 	return validation.ValidateStruct(&config,
 		validation.Field(&config.BaseURL, validation.Required),
-		validation.Field(&config.UploadPath, validation.Required),
 		validation.Field(&config.DSN, validation.Required),
 		validation.Field(&config.DSNTest, validation.Required),
 		validation.Field(&config.JWTSigningKey, validation.Required),
@@ -75,7 +73,6 @@ func LoadConfig(configPaths ...string) error {
 	v.SetEnvPrefix("restful")
 	v.AutomaticEnv()
 
-	v.SetDefault("upload_path", "/tmp/uploads")
 	v.SetDefault("error_file", "config/errors.yaml")
 	v.SetDefault("server_port", 8080)
 	v.SetDefault("jwt_signing_method", "HS256")
