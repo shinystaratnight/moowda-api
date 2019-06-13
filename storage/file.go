@@ -24,11 +24,15 @@ func NewLocalStorage(config string) (FileStorage, error) {
 	if _, ok := cf["path"]; !ok {
 		return nil, fmt.Errorf("storage config has no path key")
 	}
-	return &localStorage{path: cf["path"]}, nil
+	if _, ok := cf["baseURI"]; !ok {
+		return nil, fmt.Errorf("storage config has no baseURI key")
+	}
+	return &localStorage{path: cf["path"], baseURI: cf["baseURI"]}, nil
 }
 
 type localStorage struct {
-	path string
+	path    string
+	baseURI string
 }
 
 func (s *localStorage) Store(c echo.Context, name string, sourceFile io.ReadCloser) (string, error) {
@@ -49,7 +53,7 @@ func (s *localStorage) Store(c echo.Context, name string, sourceFile io.ReadClos
 		return "", err
 	}
 
-	return f.Name(), nil
+	return fmt.Sprintf("%s/%s", s.baseURI, filename), nil
 }
 
 func init() {

@@ -67,13 +67,22 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 func run() {
 	flag.Parse()
 
+	if err := app.LoadConfig("./config"); err != nil {
+		panic(fmt.Errorf("invalid application configuration: %s", err))
+	}
+
+	// load error messages
+	if err := apiErrors.LoadMessages(app.Config.ErrorFile); err != nil {
+		panic(fmt.Errorf("failed to read the error message file: %s", err))
+	}
+
 	e := echo.New()
 	e.Use(middleware.BodyLimit("5M"))
 
 	e.HTTPErrorHandler = customHTTPErrorHandler
 	e.Validator = &CustomValidator{validator: validator.New()}
 	e.Pre(middleware.RemoveTrailingSlash())
-	e.Static("/static", "static")
+	e.Static("/media/uploads", app.Config.UploadPath)
 
 	corsConfig := middleware.DefaultCORSConfig
 	corsConfig.AllowCredentials = true
@@ -84,15 +93,6 @@ func run() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Debug = true
-
-	if err := app.LoadConfig("./config"); err != nil {
-		panic(fmt.Errorf("invalid application configuration: %s", err))
-	}
-
-	// load error messages
-	if err := apiErrors.LoadMessages(app.Config.ErrorFile); err != nil {
-		panic(fmt.Errorf("failed to read the error message file: %s", err))
-	}
 
 	// =========================================================================
 	// Start Postgres
