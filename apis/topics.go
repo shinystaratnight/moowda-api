@@ -57,12 +57,12 @@ func (s *TopicAPI) GetTopics(c echo.Context) error {
 					s.db.Table("topics_topicmessageread").Select("coalesce(message_id, 0)").Where("topics_topicmessageread.topic_id = topics_topicmessage.topic_id and topics_topicmessageread.user_id = ?", user.ID).Limit(1).QueryExpr(),
 				).QueryExpr(),
 			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
-		).Find(&topics)
+		).Order("id desc").Find(&topics)
 	} else {
 		query = s.db.Select("id, title, (?) as unread_messages_count, (?) as messages_count",
 			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
 			s.db.Table("topics_topicmessage").Select("COUNT(*)").Where("topics_topicmessage.topic_id = topics_topic.id").QueryExpr(),
-		).Find(&topics)
+		).Order("id desc").Find(&topics)
 	}
 	if err := query.Error; err != nil {
 		return err
