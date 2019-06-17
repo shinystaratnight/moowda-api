@@ -61,7 +61,7 @@ type TopicMessage struct {
 	UserID  uint                `gorm:"column:user_id" json:"-"`
 	User    User                `gorm:"foreignkey:UserID" json:"user"`
 	Images  []TopicMessageImage `json:"images"`
-	Content string              `gorm:"column:content" json:"content"`
+	Content *string              `gorm:"column:content" json:"content"`
 }
 
 func (TopicMessage) TableName() string {
@@ -124,13 +124,13 @@ func (i Image) GetImageURL() string {
 }
 
 type CreateTopicMessageRequest struct {
-	Content string `json:"content"`
+	Content *string `json:"content"`
 	Images  []uint `json:"images"`
 }
 
 func (r CreateTopicMessageRequest) Validate() error {
 	return validation.ValidateStruct(&r,
-		validation.Field(&r.Content, validation.Required),
+		validation.Field(&r.Content, validation.NilOrNotEmpty),
 		validation.Field(&r.Images, validation.NotNil),
 	)
 }
