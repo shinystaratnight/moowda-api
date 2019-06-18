@@ -31,6 +31,10 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 	if err := c.Bind(topic); err != nil {
 		return err
 	}
+	if err := topic.Validate(); err != nil {
+		return apiErrors.InvalidData(err.(validation.Errors))
+	}
+
 	topic.OwnerID = user.ID
 
 	if err := s.db.Create(topic).Error; err != nil {

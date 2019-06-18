@@ -30,6 +30,12 @@ func (Topic) TableName() string {
 	return "topics_topic"
 }
 
+func (t Topic) Validate() error {
+	return validation.ValidateStruct(&t,
+		validation.Field(&t.Title, validation.Required),
+	)
+}
+
 type TopicCard struct {
 	BaseModel
 
@@ -61,7 +67,7 @@ type TopicMessage struct {
 	UserID  uint                `gorm:"column:user_id" json:"-"`
 	User    User                `gorm:"foreignkey:UserID" json:"user"`
 	Images  []TopicMessageImage `json:"images"`
-	Content *string              `gorm:"column:content" json:"content"`
+	Content string              `gorm:"column:content" json:"content"`
 }
 
 func (TopicMessage) TableName() string {
@@ -124,13 +130,20 @@ func (i Image) GetImageURL() string {
 }
 
 type CreateTopicMessageRequest struct {
-	Content *string `json:"content"`
+	Content string `json:"content"`
 	Images  []uint `json:"images"`
 }
 
 func (r CreateTopicMessageRequest) Validate() error {
+	if strings.TrimSpace(r.Content) == "" {
+		return validation.ValidateStruct(&r,
+			validation.Field(&r.Images, validation.NotNil),
+			validation.Field(&r.Images, validation.NilOrNotEmpty),
+		)
+	}
+
 	return validation.ValidateStruct(&r,
-		validation.Field(&r.Content, validation.NilOrNotEmpty),
+		validation.Field(&r.Content, validation.Required),
 		validation.Field(&r.Images, validation.NotNil),
 	)
 }
