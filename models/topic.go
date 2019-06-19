@@ -135,15 +135,11 @@ type CreateTopicMessageRequest struct {
 }
 
 func (r CreateTopicMessageRequest) Validate() error {
-	if strings.TrimSpace(r.Content) == "" {
+	if len(r.Images) == 0 {
 		return validation.ValidateStruct(&r,
-			validation.Field(&r.Images, validation.NotNil),
-			validation.Field(&r.Images, validation.NilOrNotEmpty),
+			validation.Field(&r.Content, validation.Required),
 		)
 	}
 
-	return validation.ValidateStruct(&r,
-		validation.Field(&r.Content, validation.Required),
-		validation.Field(&r.Images, validation.NotNil),
-	)
+	return nil
 }
