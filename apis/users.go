@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/leebenson/conform"
 	"moowda/services"
 	"net/http"
 	"strings"
@@ -44,6 +45,10 @@ func (s *UserAPI) Register(c echo.Context) error {
 		return err
 	}
 
+	if err := conform.Strings(registerRequest); err != nil {
+		return err
+	}
+
 	if err := registerRequest.Validate(); err != nil {
 		return apiErrors.InvalidData(err.(validation.Errors))
 	}
@@ -61,12 +66,12 @@ func (s *UserAPI) Register(c echo.Context) error {
 
 	if err := s.db.Where("login = ?", user.Username).Find(user).Error; err == nil {
 		tx.Rollback()
-		return apiErrors.BadRequest(errors.Errorf("username %s already taken", user.Username))
+		return apiErrors.BadRequest(errors.Errorf("username '%s' already taken", user.Username))
 	}
 
 	if err := s.db.Where("email = ?", user.Email).Find(user).Error; err == nil {
 		tx.Rollback()
-		return apiErrors.BadRequest(errors.Errorf("email %s already taken", user.Email))
+		return apiErrors.BadRequest(errors.Errorf("email '%s' already taken", user.Email))
 	}
 
 	if err := s.db.Create(user).Error; err != nil {

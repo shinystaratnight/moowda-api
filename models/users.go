@@ -22,8 +22,8 @@ func (User) TableName() string {
 }
 
 type RegisterRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
+	Username string `json:"username" conform:"trim"`
+	Email    string `json:"email" conform:"email"`
 	Password string `json:"password"`
 }
 

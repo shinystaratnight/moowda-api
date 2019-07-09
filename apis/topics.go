@@ -1,6 +1,9 @@
 package apis
 
 import (
+	"github.com/leebenson/conform"
+	"github.com/pkg/errors"
+	"moowda/db"
 	"moowda/sockets"
 	"net/http"
 	"strconv"
@@ -8,7 +11,6 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
-
 	apiErrors "moowda/errors"
 	"moowda/models"
 )
@@ -30,13 +32,29 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 	if err := c.Bind(topic); err != nil {
 		return err
 	}
+
+	if err := conform.Strings(topic); err != nil {
+		return err
+	}
+
 	if err := topic.Validate(); err != nil {
 		return apiErrors.InvalidData(err.(validation.Errors))
 	}
 
 	topic.OwnerID = user.ID
 
-	if err := s.db.Create(topic).Error; err != nil {
+	if err := db.Transaction(s.db, func(tx *gorm.DB) error {
+		t := &models.Topic{}
+		if err := tx.Where("title = ?", topic.Title).Find(t).Error; err == nil {
+			return apiErrors.BadRequest(errors.Errorf("topic with title '%s' already exists", topic.Title))
+		}
+
+		if err := tx.Create(topic).Error; err != nil {
+			return apiErrors.InternalServerError(err)
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
 

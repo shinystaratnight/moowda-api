@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation"
-
 	"moowda/app"
 	"strings"
 	"time"
@@ -14,13 +13,12 @@ type BaseModel struct {
 	ID        uint      `gorm:"primary_key" json:"id"`
 	CreatedAt time.Time `gorm:"column:created_at" json:"-"`
 	UpdatedAt time.Time `json:"-"`
-	//DeletedAt *time.Time `sql:"index" json:"-"`
 }
 
 type Topic struct {
 	BaseModel
 
-	Title       string `gorm:"column:title" json:"title"`
+	Title       string `gorm:"column:title;unique_index" json:"title" conform:"trim"`
 	OwnerID     uint   `gorm:"column:owner_id" json:"-"`
 	Owner       User   `gorm:"foreignkey:OwnerID" json:"-"`
 	UnreadCount uint   `gorm:"-" json:"unread_count"`

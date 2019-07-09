@@ -101,8 +101,9 @@ func run() {
 		panic(err)
 	}
 
-	db.DB().SetMaxOpenConns(100)
-	db.DB().SetMaxIdleConns(100)
+	db.DB().SetMaxOpenConns(50)
+	db.DB().SetMaxIdleConns(50)
+
 	// Logging
 	db.LogMode(true)
 	defer db.Close()

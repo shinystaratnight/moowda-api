@@ -42,6 +42,8 @@ github.com/aws/aws-sdk-go/private/protocol/query/queryutil
 github.com/davecgh/go-spew/spew
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 github.com/dgrijalva/jwt-go
+# github.com/etgryphon/stringUp v0.0.0-20121020160746-31534ccd8cac
+github.com/etgryphon/stringUp
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
@@ -82,6 +84,8 @@ github.com/labstack/gommon/log
 github.com/labstack/gommon/color
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/random
+# github.com/leebenson/conform v0.0.0-20180615210222-bc2e0311fd85
+github.com/leebenson/conform
 # github.com/leodido/go-urn v1.1.0
 github.com/leodido/go-urn
 # github.com/lib/pq v1.1.1
