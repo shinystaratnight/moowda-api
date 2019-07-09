@@ -1,7 +1,6 @@
 package apis
 
 import (
-	"fmt"
 	"moowda/sockets"
 	"net/http"
 	"strconv"
@@ -48,7 +47,6 @@ func (s *TopicAPI) CreateTopic(c echo.Context) error {
 
 func (s *TopicAPI) GetTopics(c echo.Context) error {
 	user, ok := c.Get("user").(*models.User)
-	fmt.Printf(">>> %v, %v", user, ok)
 
 	var topics []models.TopicCard
 

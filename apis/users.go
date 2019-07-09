@@ -60,18 +60,22 @@ func (s *UserAPI) Register(c echo.Context) error {
 	tx := s.db.Begin()
 
 	if err := s.db.Where("username = ?", user.Username).Find(user).Error; err == nil {
+		tx.Rollback()
 		return apiErrors.BadRequest(errors.Errorf("username %s already taken", user.Username))
 	}
 
 	if err := s.db.Where("email = ?", user.Email).Find(user).Error; err == nil {
+		tx.Rollback()
 		return apiErrors.BadRequest(errors.Errorf("email %s already taken", user.Email))
 	}
 
 	if err := s.db.Create(user).Error; err != nil {
+		tx.Rollback()
 		return errors.Wrap(err, "create new user")
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
 		return errors.Wrap(err, "commit transaction")
 	}
 
