@@ -59,7 +59,7 @@ func (s *UserAPI) Register(c echo.Context) error {
 
 	tx := s.db.Begin()
 
-	if err := s.db.Where("username = ?", user.Username).Find(user).Error; err == nil {
+	if err := s.db.Where("login = ?", user.Username).Find(user).Error; err == nil {
 		tx.Rollback()
 		return apiErrors.BadRequest(errors.Errorf("username %s already taken", user.Username))
 	}
