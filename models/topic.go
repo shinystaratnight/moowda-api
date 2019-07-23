@@ -129,8 +129,8 @@ func (i *Image) MarshalJSON() ([]byte, error) {
 	}{
 		ID:     i.ID,
 		URL:    i.GetImageURL(),
-		Height: width,
-		Width:  height,
+		Width:  width,
+		Height: height,
 	})
 }
 
