@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation"
+	"math"
 	"moowda/app"
 	"strings"
 	"time"
+)
+
+const (
+	MaxChatImageWidth = 500.00
 )
 
 type BaseModel struct {
@@ -113,6 +118,9 @@ func (Image) TableName() string {
 }
 
 func (i *Image) MarshalJSON() ([]byte, error) {
+	width := int(math.Min(MaxChatImageWidth, float64(i.Width)))
+	height := int(float64(i.Height) * float64(float64(width)/float64(i.Width)))
+
 	return json.Marshal(&struct {
 		ID     uint   `json:"id"`
 		URL    string `json:"url"`
@@ -121,8 +129,8 @@ func (i *Image) MarshalJSON() ([]byte, error) {
 	}{
 		ID:     i.ID,
 		URL:    i.GetImageURL(),
-		Height: i.Height,
-		Width:  i.Width,
+		Height: width,
+		Width:  height,
 	})
 }
 
