@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"moowda/models"
 	"net/http"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -100,6 +101,8 @@ func run() {
 	if err != nil {
 		panic(err)
 	}
+
+	db.AutoMigrate(models.Image{})
 
 	db.DB().SetMaxOpenConns(50)
 	db.DB().SetMaxIdleConns(50)

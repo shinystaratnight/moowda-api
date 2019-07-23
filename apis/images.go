@@ -1,6 +1,9 @@
 package apis
 
 import (
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"net/http"
 
 	"github.com/jinzhu/gorm"
@@ -32,6 +35,14 @@ func (r *ImagesAPI) Upload(c echo.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "open form file")
 	}
+	defer file.Close()
+
+	config, _, err := image.DecodeConfig(file)
+	if err != nil {
+		return errors.Wrap(err, "parse image")
+	}
+
+	file.Seek(0, 0)
 
 	url, err := r.fileStorage.Store(c, sourceFile.Filename, file)
 	if err != nil {
@@ -41,6 +52,8 @@ func (r *ImagesAPI) Upload(c echo.Context) error {
 	image := models.Image{
 		UserID: user.ID,
 		URL:    url,
+		Width:  config.Width,
+		Height: config.Height,
 	}
 
 	if err := r.db.Create(&image).Error; err != nil {

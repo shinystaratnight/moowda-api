@@ -104,6 +104,8 @@ type Image struct {
 	UserID uint   `gorm:"column:user_id" json:"-"`
 	User   User   `gorm:"foreignkey:UserID"  json:"-"`
 	URL    string `gorm:"column:url" json:"url"`
+	Height int    `gorm:"column:height" json:"height"`
+	Width  int    `gorm:"column:width" json:"width"`
 }
 
 func (Image) TableName() string {
@@ -112,11 +114,15 @@ func (Image) TableName() string {
 
 func (i *Image) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		ID  uint   `json:"id"`
-		URL string `json:"url"`
+		ID     uint   `json:"id"`
+		URL    string `json:"url"`
+		Height int    `json:"height"`
+		Width  int    `json:"width"`
 	}{
-		ID:  i.ID,
-		URL: i.GetImageURL(),
+		ID:     i.ID,
+		URL:    i.GetImageURL(),
+		Height: i.Height,
+		Width:  i.Width,
 	})
 }
 
