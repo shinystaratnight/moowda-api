@@ -194,7 +194,8 @@ func (s *TopicAPI) GetTopicMessages(c echo.Context) error {
 
 	var messages []models.TopicMessage
 
-	if err := s.db.Preload("User").Preload("Images.Image").Where("topic_id = ?", topicID).Find(&messages).Error; err != nil {
+	if err := s.db.Preload("User").Preload("Images.Image").
+		Where("topic_id = ?", topicID).Order("created_at").Find(&messages).Error; err != nil {
 		return err
 	}
 
